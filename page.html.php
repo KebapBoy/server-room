@@ -18,7 +18,7 @@
   <noscript>
     <ul class="fallback">
 <?php foreach (link_tiles($model) as $tile): ?>
-      <li><a class="tile" href="<?= h($tile['href']) ?>">
+      <li><a class="tile" href="<?= h($tile['href']) ?>" target="_blank" rel="noopener">
         <span class="led <?= $tile['led'] ?>"></span><span class="led <?= $tile['state'] === 'running' ? 'act blink' : 'off' ?>"></span><span class="vents"></span>
         <span class="tile-label"><?= h($tile['label']) ?></span>
         <svg class="tile-arrow" viewBox="0 0 8 8" aria-hidden="true"><path d="M1 7l6 -6m-4 0h4v4"/></svg>

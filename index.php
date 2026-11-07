@@ -24,6 +24,11 @@ const SERVICE_CONTAINERS = [
     'dashboard' => 'swag',
 ];
 
+// Services whose web UI does not live at /: conf name => path
+const SERVICE_PATHS = [
+    'pihole' => '/admin/',
+];
+
 // Docker networks that do not mean two containers talk to each other
 const IGNORED_NETWORKS = ['host', 'none', 'bridge'];
 
@@ -192,7 +197,7 @@ function build_model(array $visible, array $snapshot, bool $isAdmin): array
     foreach ($visible as $service) {
         $link = [
             'label' => SERVICE_CONTAINERS[$service['name']] ?? $service['name'],
-            'href' => 'https://' . $service['host'] . '/',
+            'href' => 'https://' . $service['host'] . (SERVICE_PATHS[$service['name']] ?? '/'),
         ];
         $place = locate_service($service, $environments);
         if ($place[0] === 'container') {

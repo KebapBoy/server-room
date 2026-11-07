@@ -17,6 +17,7 @@
   const POLL_MS = 15000;
   const FONT_W = 0.6;         // monospace glyph width relative to font size
   const MAX_PACKETS = 24;
+  const NEW_TAB = { target: '_blank', rel: 'noopener' };  // service links always open a new tab
   const FLOOR_H = 44;         // room below the racks for the power strip
   const SHUTDOWN_MS = 10000;  // unplug animation before the logout redirect; all phases scale with it
   // Shutdown phases as fractions of SHUTDOWN_MS
@@ -185,7 +186,7 @@
       const label = link.label + ' ↗';
       const pw = label.length * 8 * FONT_W + 12;
       right -= pw;
-      const a = el(g, 'a', { href: link.href, class: 'pill-link', 'aria-label': link.label + ' öffnen' });
+      const a = el(g, 'a', { href: link.href, ...NEW_TAB, class: 'pill-link', 'aria-label': link.label + ' in neuem Tab öffnen' });
       el(a, 'rect', { x: right, y: y + h / 2 - 7, width: pw, height: 14, rx: 7, class: 'pill' });
       el(a, 'text', { x: right + 6, y: y + h / 2 + 3, class: 'pill-text' }, label);
       right -= 6;
@@ -290,7 +291,7 @@
   }
 
   function drawModule(g, m, x, y, w, h) {
-    const parent = m.href ? el(g, 'a', { href: m.href, class: 'module-link', 'aria-label': m.label + ' öffnen' }) : g;
+    const parent = m.href ? el(g, 'a', { href: m.href, ...NEW_TAB, class: 'module-link', 'aria-label': m.label + ' in neuem Tab öffnen' }) : g;
     const box = el(parent, 'g', { class: 'module' });
     el(box, 'title', {}, `${m.title} · ${stateText(m)}`);
     el(box, 'rect', { x, y, width: w, height: h, rx: 2.5, class: 'module-body' });
@@ -367,7 +368,7 @@
     }
     devices.forEach((d, i) => {
       const c = cells[i];
-      const a = el(g, 'a', { href: d.href, class: 'module-link', 'aria-label': d.label + ' öffnen' });
+      const a = el(g, 'a', { href: d.href, ...NEW_TAB, class: 'module-link', 'aria-label': d.label + ' in neuem Tab öffnen' });
       const bx = c.x + c.w / 2 - 34;
       el(a, 'title', {}, d.label);
       el(a, 'rect', { x: bx, y: c.y + 4, width: 68, height: c.h - 12, rx: 2, class: 'module-body' });

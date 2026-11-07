@@ -73,6 +73,7 @@ The settings are constants at the top of `index.php`. Service names are proxy co
 | `GROUPS_WITHOUT_AUTHELIA` | `admins` | Groups that see services without Authelia |
 | `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` |  | The same per service |
 | `SERVICE_CONTAINERS` |  | Container for services whose proxy conf has no usable upstream |
+| `SERVICE_PATHS` |  | Start path for services whose UI does not live at `/` |
 | `SNAPSHOT_MAX_AGE` | `180` | Seconds after which the stack snapshot counts as stale |
 
 Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`).
@@ -135,6 +136,7 @@ The first matching rule wins:
 ### The rack
 
 - Each rack has a head unit with a name plate, a status LED and the number of active modules.
+- Service links open in a new tab.
 
 ### Signing out
 
