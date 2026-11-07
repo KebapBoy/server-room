@@ -32,6 +32,8 @@
   const host = document.getElementById('rack');
   const statusEl = document.getElementById('status');
   const logoutLink = document.getElementById('logout');
+  // /?dry plays the unplug animation without logging out
+  const dryRun = new URLSearchParams(location.search).has('dry');
   const motion = matchMedia('(prefers-reduced-motion: no-preference)');
 
   let model = JSON.parse(document.getElementById('model').textContent);
@@ -621,6 +623,11 @@
     requestAnimationFrame(tick);
   }
 
+  function logout() {
+    if (dryRun) location.reload();
+    else location.assign(logoutLink.href);
+  }
+
   // Plug out: the UPSs keep everything running on battery until it is empty,
   // then traffic stops, LEDs die one by one, fans coast down, and we log out
   function unplug() {
@@ -630,7 +637,7 @@
     statusEl.classList.remove('warn');
     if (!motion.matches || !svg) {
       statusEl.textContent = 'Stecker gezogen · Abmeldung …';
-      location.assign(logoutLink.href);
+      logout();
       return;
     }
     statusEl.textContent = 'Stecker gezogen · USV läuft auf Akku …';
@@ -652,7 +659,7 @@
       svg.style.transition = `opacity ${phase('dim')}ms, filter ${phase('dim')}ms`;
       svg.classList.add('powered-off');
     }, phase('dimAt'));
-    setTimeout(() => location.assign(logoutLink.href), SHUTDOWN_MS);
+    setTimeout(logout, SHUTDOWN_MS);
   }
 
   function onLogoutClick(event) {

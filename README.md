@@ -146,6 +146,7 @@ Without JavaScript or with "reduce motion" the plug is a plain link to the logou
 
 - No build step and no dependencies. Changes are live on the next request; nginx only needs a reload when its conf changes.
 - Syntax check: `docker exec swag php -l /config/www/start/index.php`
+- `/?dry` plays the sign-out animation and reloads the page instead of signing out.
 
 Show the mapping without a browser, as an admin:
 
