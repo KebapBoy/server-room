@@ -10,19 +10,22 @@
 </head>
 <body>
 <main>
-  <header>
+  <header class="top">
     <h1><?= h(BASE_DOMAIN) ?></h1>
     <p>Angemeldet als <?= h($displayName) ?> · <a href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Abmelden</a></p>
   </header>
-<?php if ($visible): ?>
-  <ul>
+  <div id="rack" class="rack"></div>
+  <noscript>
+    <ul class="fallback">
 <?php foreach ($visible as $s): ?>
-    <li><a href="https://<?= h($s['host']) ?>/"><strong><?= h(str_replace('-', ' ', $s['name'])) ?></strong><span><?= h($s['host']) ?></span></a></li>
+      <li><a href="https://<?= h($s['host']) ?>/"><?= h($s['name']) ?></a></li>
 <?php endforeach; ?>
-  </ul>
-<?php else: ?>
-  <p>Für dieses Konto sind keine Dienste freigegeben.</p>
-<?php endif; ?>
+    </ul>
+  </noscript>
+  <p id="status" class="status"></p>
 </main>
+<script type="application/json" id="model"><?= $modelJson ?></script>
+<script>
+<?= file_get_contents(__DIR__ . '/rack.js') ?></script>
 </body>
 </html>

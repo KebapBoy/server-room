@@ -1,16 +1,85 @@
-:root { color-scheme: light dark; --bg: #f6f7f9; --card: #fff; --text: #1d2330; --muted: #667085; --border: #e3e6eb; --accent: #2f6fed; }
+:root {
+  color-scheme: light dark;
+  --bg: #f3f4f1; --panel: #f9f9f6; --line: #2a3037; --muted: #7b838c; --faint: rgba(42, 48, 55, .22);
+  --accent: #1f6feb; --ok: #17a34a; --warn: #d4a106; --bad: #dc3d34; --act: #2f81f7;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #14171c; --card: #1e232b; --text: #e7eaf0; --muted: #98a2b3; --border: #2c333d; --accent: #7aa5ff; }
+  :root {
+    --bg: #0e1115; --panel: #12161b; --line: #c4ccd5; --muted: #78818b; --faint: rgba(196, 204, 213, .2);
+    --accent: #58a6ff; --ok: #3fb950; --warn: #e3b341; --bad: #f85149; --act: #58a6ff;
+  }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main { max-width: 56rem; margin: 0 auto; padding: 2rem 1rem; }
-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1rem; margin-bottom: 1.5rem; }
-h1 { margin: 0; font-size: 1.5rem; }
-header p { margin: 0; color: var(--muted); }
+body { margin: 0; background: var(--bg); color: var(--line); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1rem 2rem; }
 a { color: var(--accent); }
-ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .75rem; }
-li a { display: block; padding: .9rem 1rem; background: var(--card); border: 1px solid var(--border); border-radius: .6rem; text-decoration: none; color: var(--text); }
-li a:hover, li a:focus-visible { border-color: var(--accent); }
-li strong { display: block; text-transform: capitalize; }
-li span { color: var(--muted); font-size: .875rem; }
+
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1rem; margin-bottom: 1rem; }
+h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
+.top p { margin: 0; color: var(--muted); font-size: .9rem; }
+.status { margin: .75rem 0 0; color: var(--muted); font: .8rem/1.4 var(--mono); }
+.status.warn::before { content: "● "; color: var(--warn); }
+
+.fallback { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: .5rem; }
+.fallback a { display: block; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: .3rem; text-decoration: none; font-family: var(--mono); }
+
+/* Rack drawing: outlines only, colour is reserved for LEDs and traffic */
+.rack svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+.rack-svg { font-family: var(--mono); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.rack-svg text { fill: var(--line); stroke: none; }
+.rack-svg .title { font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.rack-svg .stack-name { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+.rack-svg .label { font-size: 9.5px; }
+.rack-svg .small { font-size: 7px; letter-spacing: .08em; fill: var(--muted); }
+.rack-svg .unum { font-size: 6px; fill: var(--muted); }
+.rack-svg .pill-text { font-size: 8px; }
+
+.frame { stroke: var(--line); stroke-width: 1.4; fill: var(--bg); }
+.rail { stroke: var(--line); stroke-width: .9; }
+.hole { stroke: var(--muted); stroke-width: .7; }
+.face { stroke: var(--line); stroke-width: 1.1; fill: var(--panel); }
+.screw { stroke: var(--muted); stroke-width: .8; fill: var(--bg); }
+.vent, .blade { stroke: var(--muted); stroke-width: .9; }
+.slot { stroke: var(--muted); stroke-width: 2.2; opacity: .55; }
+.port { stroke: var(--line); stroke-width: .9; fill: var(--bg); }
+.ring, .tray { stroke: var(--line); stroke-width: 1.1; }
+.arrow { stroke: var(--line); stroke-width: 1.2; }
+
+.module-body { stroke: var(--line); stroke-width: 1; fill: var(--bg); }
+.blank-body { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 3 3; }
+.module-link { cursor: pointer; }
+.module-link:focus { outline: none; }
+.module-link .module-body { stroke-width: 1.3; }
+.module-link:hover .module-body, .module-link:focus-visible .module-body { stroke: var(--accent); stroke-width: 1.8; }
+.module-link:hover text, .module-link:focus-visible text { fill: var(--accent); }
+.module-link:hover .arrow, .module-link:focus-visible .arrow { stroke: var(--accent); }
+.pill { stroke: var(--line); stroke-width: 1; fill: var(--bg); }
+.pill-link:hover .pill, .pill-link:focus-visible .pill { stroke: var(--accent); }
+.pill-link:hover text, .pill-link:focus-visible text { fill: var(--accent); }
+.pill-link:focus { outline: none; }
+
+.trace { stroke: var(--faint); stroke-width: 1; }
+.cable { stroke: var(--line); stroke-width: 1.2; opacity: .7; }
+.cable.uplink { stroke-width: 1.6; stroke-dasharray: 6 3; }
+.channel { stroke: var(--faint); stroke-width: 1; }
+.packet { fill: var(--accent); filter: drop-shadow(0 0 2px var(--accent)); }
+
+.led { stroke: var(--muted); stroke-width: .8; fill: var(--bg); }
+.led.ok { fill: var(--ok); stroke: var(--ok); filter: drop-shadow(0 0 1.5px var(--ok)); }
+.led.warn { fill: var(--warn); stroke: var(--warn); filter: drop-shadow(0 0 1.5px var(--warn)); }
+.led.bad { fill: var(--bad); stroke: var(--bad); filter: drop-shadow(0 0 1.5px var(--bad)); }
+.led.act { fill: var(--act); stroke: var(--act); }
+.led.flash { opacity: 1 !important; fill: var(--accent); stroke: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
+
+.blink { animation: blink 2s steps(1, end) infinite; }
+@keyframes blink {
+  0% { opacity: 1; } 12% { opacity: .15; } 18% { opacity: 1; } 46% { opacity: .25; }
+  52% { opacity: 1; } 77% { opacity: .1; } 83% { opacity: 1; }
+}
+.fan { transform-box: fill-box; transform-origin: center; animation: spin 1.4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .blink, .fan { animation: none; }
+}

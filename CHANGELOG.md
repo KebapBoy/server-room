@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-11-07
+
+### Added
+
+- Server rack view drawn as SVG by `rack.js`: one rack per environment, one chassis per compose stack, one module per container, with status LEDs and filler units.
+- Services are mapped to containers via their proxy upstreams and a stack snapshot in `data/stacks.json`.
+- JSON endpoint `/?data=1`; the page polls it every 15 s and updates without reloading.
+- Admins see all stacks and containers; everyone else only the containers of their own services, filtered on the server.
+- Pseudo traffic between containers that share a Docker network.
+- Warning when the snapshot is older than 3 minutes.
+
+### Changed
+
+- Without JavaScript the page falls back to a plain link list.
+
 ## [0.1.0] - 2026-11-07
 
 ### Added
