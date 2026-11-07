@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Serverraum · <?= h(BASE_DOMAIN) ?></title>
+<title>Server Room · <?= h(BASE_DOMAIN) ?></title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,<?= base64_encode(file_get_contents(__DIR__ . '/favicon.svg')) ?>">
 <style>
 <?= file_get_contents(__DIR__ . '/style.css') ?></style>
@@ -12,7 +12,7 @@
 <main>
 <?php $welcome = 'Welcome to ' . BASE_DOMAIN . ($firstName !== '' ? ', ' . $firstName : '') . '!'; ?>
   <header class="intro">
-    <h1 id="intro" lang="en" aria-label="Hello World! <?= h($welcome) ?>"><span class="line">Hello World! </span><span class="line">Welcome to <b><?= h(BASE_DOMAIN) ?></b><?= $firstName !== '' ? ', </span><span class="line">' . h($firstName) : '' ?>!</span></h1>
+    <h1 id="intro" aria-label="Hello World! <?= h($welcome) ?>"><span class="line">Hello World! </span><span class="line">Welcome to <b><?= h(BASE_DOMAIN) ?></b><?= $firstName !== '' ? ', </span><span class="line">' . h($firstName) : '' ?>!</span></h1>
   </header>
   <div id="rack" class="rack" data-logout="https://auth.<?= h(BASE_DOMAIN) ?>/logout"></div>
   <noscript>
@@ -25,7 +25,7 @@
       </a></li>
 <?php endforeach; ?>
     </ul>
-    <p class="logout"><a href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Abmelden</a></p>
+    <p class="logout"><a href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Sign out</a></p>
   </noscript>
   <p id="status" class="status"></p>
 </main>

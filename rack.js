@@ -48,10 +48,8 @@
   let poweredOff = false;
 
   const STATE_TEXT = {
-    running: 'läuft', created: 'erstellt', paused: 'pausiert', restarting: 'startet neu',
-    exited: 'gestoppt', dead: 'abgestürzt', removing: 'wird entfernt',
+    exited: 'stopped', dead: 'crashed',
   };
-  const HEALTH_TEXT = { healthy: 'gesund', unhealthy: 'gestört', starting: 'startet' };
 
   // ---- helpers ----------------------------------------------------------
 
@@ -95,7 +93,7 @@
 
   function stateText(m) {
     const state = STATE_TEXT[m.state] || m.state;
-    return m.health ? `${state}, ${HEALTH_TEXT[m.health] || m.health}` : state;
+    return m.health ? `${state}, ${m.health}` : state;
   }
 
   function blink(node, min, max) {
@@ -190,7 +188,7 @@
       const label = link.label + ' ↗';
       const pw = label.length * 8 * FONT_W + 12;
       right -= pw;
-      const a = el(g, 'a', { href: link.href, ...NEW_TAB, class: 'pill-link', 'aria-label': link.label + ' in neuem Tab öffnen' });
+      const a = el(g, 'a', { href: link.href, ...NEW_TAB, class: 'pill-link', 'aria-label': `Open ${link.label} in a new tab` });
       el(a, 'rect', { x: right, y: y + h / 2 - 7, width: pw, height: 14, rx: 7, class: 'pill' });
       el(a, 'text', { x: right + 6, y: y + h / 2 + 3, class: 'pill-text' }, label);
       right -= 6;
@@ -199,7 +197,7 @@
     // Two-line display: active containers, below it the status that updateStatus() writes
     const lcdX = x + plateW + 8;
     const lcdW = Math.min(180, right - 2 - lcdX);
-    const counts = !rack.online ? 'OFFLINE' : all.length ? `${running}/${all.length} AKTIV` : 'ONLINE';
+    const counts = !rack.online ? 'OFFLINE' : all.length ? `${running}/${all.length} ACTIVE` : 'ONLINE';
     const lcd = el(g, 'a', { class: 'lcd-link' });
     el(lcd, 'rect', { x: lcdX, y: y + 7, width: lcdW, height: h - 14, rx: 2, class: 'lcd' });
     el(lcd, 'text', { x: lcdX + 6, y: y + 19, class: 'lcd-text' }, fit(counts, lcdW - 12, 8));
@@ -272,12 +270,12 @@
   function drawUps(g, box, ctx) {
     const { x, y, w, h } = box;
     el(g, 'rect', { x, y: y + 8, width: 74, height: h - 16, rx: 2, class: 'port' });
-    el(g, 'text', { x: x + 6, y: y + 20, class: 'small' }, 'USV');
+    el(g, 'text', { x: x + 6, y: y + 20, class: 'small' }, 'UPS');
     el(g, 'text', { x: x + 6, y: y + 32, class: 'label ups-charge' }, '100 %');
     led(g, x + 88, y + 12, 'ok', 2.4).classList.add('ups-mains');
-    el(g, 'text', { x: x + 94, y: y + 14.5, class: 'small' }, 'NETZ');
+    el(g, 'text', { x: x + 94, y: y + 14.5, class: 'small' }, 'MAINS');
     led(g, x + 128, y + 12, 'off', 2.4).classList.add('ups-on-battery');
-    el(g, 'text', { x: x + 134, y: y + 14.5, class: 'small' }, 'AKKU');
+    el(g, 'text', { x: x + 134, y: y + 14.5, class: 'small' }, 'BATT');
     ctx.ups = { x: x + w, y: y + h - 5 };
     // Battery gauge, drains when the plug is pulled
     const bx = x + 84;
@@ -304,7 +302,7 @@
   }
 
   function drawModule(g, m, x, y, w, h) {
-    const parent = m.href ? el(g, 'a', { href: m.href, ...NEW_TAB, class: 'module-link', 'aria-label': m.label + ' in neuem Tab öffnen' }) : g;
+    const parent = m.href ? el(g, 'a', { href: m.href, ...NEW_TAB, class: 'module-link', 'aria-label': `Open ${m.label} in a new tab` }) : g;
     const box = el(parent, 'g', { class: 'module' });
     el(box, 'title', {}, `${m.title} · ${stateText(m)}`);
     el(box, 'rect', { x, y, width: w, height: h, rx: 2.5, class: 'module-body' });
@@ -373,7 +371,7 @@
 
   function drawShelf(g, box, devices, cols) {
     const { cells } = moduleGrid(box, devices.length, cols);
-    el(g, 'text', { x: box.x, y: box.y + 14, class: 'stack-name' }, 'geräte');
+    el(g, 'text', { x: box.x, y: box.y + 14, class: 'stack-name' }, 'devices');
     const rows = new Set(cells.map((c) => c.row));
     for (const r of rows) {
       const c = cells.find((cell) => cell.row === r);
@@ -381,7 +379,7 @@
     }
     devices.forEach((d, i) => {
       const c = cells[i];
-      const a = el(g, 'a', { href: d.href, ...NEW_TAB, class: 'module-link', 'aria-label': d.label + ' in neuem Tab öffnen' });
+      const a = el(g, 'a', { href: d.href, ...NEW_TAB, class: 'module-link', 'aria-label': `Open ${d.label} in a new tab` });
       const bx = c.x + c.w / 2 - 34;
       el(a, 'title', {}, d.label);
       el(a, 'rect', { x: bx, y: c.y + 4, width: 68, height: c.h - 12, rx: 2, class: 'module-body' });
@@ -466,10 +464,10 @@
     el(layer, 'path', { d: `M${wallX} ${sy - 30}V${sy + FLOOR_H / 2 - 1}`, class: 'rail' });
     for (let hy = sy - 28; hy < sy + FLOOR_H / 2 - 6; hy += 6) el(layer, 'path', { d: `M${wallX} ${hy}l5 5`, class: 'vent' });
 
-    const a = el(layer, 'a', { href: logoutUrl, class: 'plug-link', 'aria-label': 'Stecker ziehen und abmelden' });
-    el(a, 'title', {}, 'Stecker ziehen · abmelden');
+    const a = el(layer, 'a', { href: logoutUrl, class: 'plug-link', 'aria-label': 'Pull the plug to sign out' });
+    el(a, 'title', {}, 'Pull the plug · sign out');
     el(a, 'rect', { x: bodyLeft - 20, y: sy - 24, width: wallX - bodyLeft + 20, height: 36, class: 'hit' });
-    el(a, 'text', { x: wallX - 8, y: sy - 13, 'text-anchor': 'end', class: 'small' }, 'ABMELDEN');
+    el(a, 'text', { x: wallX - 8, y: sy - 13, 'text-anchor': 'end', class: 'small' }, 'SIGN OUT');
     const plug = el(a, 'g', { class: 'plug' });
     el(plug, 'path', { d: `M${bodyLeft - 24} ${sy}H${bodyLeft}`, class: 'cable' });
     el(plug, 'path', { d: `M${bodyRight} ${sy - 3.5}h5M${bodyRight} ${sy + 3.5}h5`, class: 'pin' });
@@ -584,7 +582,7 @@
     const top = TOP;
     const slotW = w + CHANNEL;
 
-    const svg = el(null, 'svg', { class: 'rack-svg', role: 'group', 'aria-label': 'Serverrack' });
+    const svg = el(null, 'svg', { class: 'rack-svg', role: 'group', 'aria-label': 'Server rack' });
     const contexts = racks.map((rack, i) => {
       const x0 = 1 + (narrow ? 0 : i * (slotW + gap));
       const y0 = top + (narrow ? i * (rackH + gap) : 0);
@@ -624,16 +622,16 @@
   function updateStatus() {
     if (poweredOff) return;
     if (sessionLost) {
-      setStatus('Sitzung abgelaufen · neu anmelden', { warn: true, href: '/' });
+      setStatus('Session expired · sign in again', { warn: true, href: '/' });
       return;
     }
     if (!model.generated) {
-      setStatus('Keine Daten', { warn: true });
+      setStatus('No data', { warn: true });
       return;
     }
     const age = Math.max(0, Math.round(Date.now() / 1000 - model.generated));
     const ago = age < 90 ? `${age} s` : age < 5400 ? `${Math.round(age / 60)} min` : `${Math.round(age / 3600)} h`;
-    setStatus((model.stale ? 'Veraltet · vor ' : 'Stand vor ') + ago, { warn: model.stale });
+    setStatus((model.stale ? 'Stale · ' : 'Updated ') + ago + ' ago', { warn: model.stale });
   }
 
   // ---- logout: pull the plug ----------------------------------------------
@@ -692,11 +690,11 @@
     const svg = host.querySelector('svg');
     poweredOff = true;
     if (!motion.matches || !svg) {
-      setStatus('Stecker gezogen · Abmeldung …');
+      setStatus('Plug pulled · signing out …');
       logout();
       return;
     }
-    setStatus('Stecker gezogen · Akkubetrieb', { warn: true });
+    setStatus('Plug pulled · on battery', { warn: true });
     svg.querySelector('.plug-link').classList.add('pulled');
     svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
     svg.querySelectorAll('.ups-on-battery').forEach((node) => {
@@ -705,7 +703,7 @@
     });
 
     drainBatteries(svg, () => {
-      setStatus('Akku leer · Abmeldung …', { warn: true });
+      setStatus('Battery empty · signing out …', { warn: true });
       stopTraffic();
       const leds = [...svg.querySelectorAll('.led')].sort(() => Math.random() - 0.5);
       leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, phase('ledsOff'))));
