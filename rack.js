@@ -18,6 +18,7 @@
   const FONT_W = 0.6;         // monospace glyph width relative to font size
   const MAX_PACKETS = 24;
   const NEW_TAB = { target: '_blank', rel: 'noopener' };  // service links always open a new tab
+  const TOP = 26;             // room above the racks for the inter-rack cable
   const FLOOR_H = 44;         // room below the racks for the power strip
   const SHUTDOWN_MS = 10000;  // unplug animation before the logout redirect; all phases scale with it
   // Shutdown phases as fractions of SHUTDOWN_MS
@@ -39,6 +40,9 @@
 
   let model = JSON.parse(document.getElementById('model').textContent);
   let narrow = null;
+  let layout = null;
+  // Must match the media query in style.css that moves the greeting beside the racks
+  const sideLayout = matchMedia('(min-width: 1400px)');
   let traffic = null;
   let sessionLost = false;
   let poweredOff = false;
@@ -529,21 +533,56 @@
 
   // ---- render, status, polling ------------------------------------------
 
-  function render() {
-    if (poweredOff) return;
-    stopTraffic();
-    narrow = host.clientWidth < 720;
-    const cols = narrow ? 2 : 3;
-    const w = narrow ? 340 : 460;
-    const gap = narrow ? 36 : 48;
-    const top = 26;
-    const racks = model.racks.length ? model.racks : [{ name: 'example.com', online: true, links: [], stacks: [] }];
+  function currentRacks() {
+    return model.racks.length ? model.racks : [{ name: 'example.com', online: true, links: [], stacks: [] }];
+  }
+
+  // Size of the drawing for a column count, without drawing anything; viewW must match
+  // what drawPower() needs to the right of the last rack
+  function geometry(racks, cols, isNarrow) {
+    const w = isNarrow ? 340 : 40 + 140 * cols;
+    const gap = isNarrow ? 36 : 48;
     const plans = racks.map((rack, i) => planRack(rack, i, cols, model.devices));
     const units = padPlans(plans, racks);
     const rackH = CAP * 2 + units * U + 4;
+    const n = racks.length;
+    const floor = TOP + (isNarrow ? n * rackH + (n - 1) * gap : rackH);
+    const viewW = isNarrow ? w + 112 + (n - 1) * 4 : (n - 1) * (w + CHANNEL + gap) + w + 112;
+    return { cols, w, gap, plans, rackH, floor, height: floor + FLOOR_H, viewW };
+  }
+
+  // Stacked racks on small screens. Otherwise the racks get at least 75 % of the page width
+  // (exactly that when the greeting sits beside them) and at most 1500 px, and as many
+  // modules per row as it takes to fit the window height.
+  function chooseLayout(racks) {
+    const pageW = document.documentElement.clientWidth;
+    if (pageW < 752) return { narrow: true, geo: geometry(racks, 2, true), width: null };
+    const minW = Math.min(pageW * 0.75, 1500);
+    const maxW = sideLayout.matches ? minW : Math.min(1500, pageW - 32);
+    const availH = innerHeight - (host.getBoundingClientRect().top + scrollY) - 16;
+    let best = null;
+    for (const cols of [3, 4, 5]) {
+      const geo = geometry(racks, cols, false);
+      const width = Math.max(minW, Math.min(maxW, (availH * geo.viewW) / geo.height));
+      const option = { narrow: false, geo, width, height: (width * geo.height) / geo.viewW };
+      if (option.height <= availH) return option;
+      if (!best || option.height < best.height) best = option;
+    }
+    return best;
+  }
+
+  const layoutKey = (choice) => `${choice.narrow}/${choice.geo.cols}`;
+
+  function render() {
+    if (poweredOff) return;
+    stopTraffic();
+    const racks = currentRacks();
+    const choice = chooseLayout(racks);
+    layout = layoutKey(choice);
+    narrow = choice.narrow;
+    const { cols, w, gap, plans, rackH, floor, height } = choice.geo;
+    const top = TOP;
     const slotW = w + CHANNEL;
-    const floor = narrow ? top + racks.length * rackH + (racks.length - 1) * gap : top + rackH;
-    const height = floor + FLOOR_H;
 
     const svg = el(null, 'svg', { class: 'rack-svg', role: 'group', 'aria-label': 'Serverrack' });
     const contexts = racks.map((rack, i) => {
@@ -562,7 +601,8 @@
 
     const width = wallX + 7;
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.style.maxWidth = Math.round(width * 1.15) + 'px';
+    if (narrow) svg.style.maxWidth = Math.round(width * 1.15) + 'px';
+    else svg.style.width = Math.round(choice.width) + 'px';
     host.replaceChildren(svg);
     startTraffic(svg, routes);
     updateStatus();
@@ -706,9 +746,15 @@
     }
   }
 
-  new ResizeObserver(() => {
-    if ((host.clientWidth < 720) !== narrow) render();
-  }).observe(host);
+  // Redraw only when the column count changes, otherwise just rescale
+  function resize() {
+    if (poweredOff) return;
+    const choice = chooseLayout(currentRacks());
+    if (layoutKey(choice) !== layout) render();
+    else if (!choice.narrow) host.firstChild.style.width = Math.round(choice.width) + 'px';
+  }
+  addEventListener('resize', resize);
+  sideLayout.addEventListener('change', resize);
   motion.addEventListener('change', render);
   logoutLink.addEventListener('click', onLogoutClick);
   host.addEventListener('click', (event) => {

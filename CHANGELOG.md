@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-11-07
+
+### Changed
+
+- The racks are sized to the window: centred, at least 75 % of the page wide and at most 1500 px, with 3 to 5 modules per row so the drawing fits the window height.
+
 ## [0.10.0] - 2026-11-07
 
 ### Added

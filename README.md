@@ -136,6 +136,7 @@ The first matching rule wins:
 ### The rack
 
 - Each rack has a head unit with a name plate, a status LED and the number of active modules; a small display next to it shows the age of the data and status messages.
+- The racks are centred and sized to the window, from 75 % of the width up to 1500 px; they stack on narrow screens.
 - Service links open in a new tab.
 
 ### Signing out
