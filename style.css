@@ -72,6 +72,12 @@ h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
 .led.act { fill: var(--act); stroke: var(--act); }
 .led.flash { opacity: 1 !important; fill: var(--accent); stroke: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
 
+/* UPS battery gauge */
+.cell { fill: var(--faint); stroke: none; }
+.cell.on { fill: var(--ok); }
+.battery.low .cell.on { fill: var(--warn); }
+.battery.crit .cell.on { fill: var(--bad); }
+
 /* Power strip and wall socket; pulling the plug logs out */
 .pin { stroke: var(--line); stroke-width: 1.6; }
 .plug-body { stroke: var(--line); stroke-width: 1.3; fill: var(--bg); }
@@ -83,7 +89,7 @@ h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
 .plug-link:hover .plug-body, .plug-link:focus-visible .plug-body { stroke: var(--accent); stroke-width: 1.8; }
 .plug-link:hover text, .plug-link:focus-visible text { fill: var(--accent); }
 .plug-link.pulled .plug { transform: translateX(-22px); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
-.rack-svg.powered-off { opacity: .35; filter: grayscale(1); transition: opacity .5s, filter .5s; }
+.rack-svg.powered-off { opacity: .35; filter: grayscale(1); }
 
 .blink { animation: blink 2s steps(1, end) infinite; }
 @keyframes blink {

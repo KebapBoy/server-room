@@ -75,6 +75,8 @@ The settings are constants at the top of `index.php`. Service names are proxy co
 | `SERVICE_CONTAINERS` |  | Container for services whose proxy conf has no usable upstream |
 | `SNAPSHOT_MAX_AGE` | `180` | Seconds after which the stack snapshot counts as stale |
 
+Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`).
+
 ## Stack snapshot
 
 The page never talks to Docker itself. A job of yours writes `data/stacks.json`, for example every 30 s from cron on the Docker host. This keeps any Docker or API credentials out of the internet-facing SWAG container. Write the file atomically (temp file plus rename).
@@ -136,7 +138,7 @@ The first matching rule wins:
 
 ### Signing out
 
-All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it (so does the sign-out link in the header). The UPS drains, the LEDs go out one by one, the fans coast down and the rack dims, then the page goes to Authelia's logout.
+All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it (so does the sign-out link in the header). The UPS units switch from mains to battery and keep everything running until the battery is empty; then traffic stops, LEDs go out, fans coast down and the rack greys out before the page goes to Authelia's logout. All of this takes `SHUTDOWN_MS`.
 
 Without JavaScript or with "reduce motion" the plug is a plain link to the logout.
 

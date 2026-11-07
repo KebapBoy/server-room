@@ -18,7 +18,16 @@
   const FONT_W = 0.6;         // monospace glyph width relative to font size
   const MAX_PACKETS = 24;
   const FLOOR_H = 44;         // room below the racks for the power strip
-  const SHUTDOWN_MS = 1700;   // unplug animation before the logout redirect
+  const SHUTDOWN_MS = 10000;  // unplug animation before the logout redirect; all phases scale with it
+  // Shutdown phases as fractions of SHUTDOWN_MS
+  const PHASES = {
+    drain: 0.65,              // UPSs run on battery until it is empty
+    ledsOff: 0.15,            // LEDs die one by one after that
+    fans: 0.25,               // fans coast to a stop
+    dimAt: 0.85,              // the rack starts to grey out
+    dim: 0.12,                // duration of the grey-out
+  };
+  const phase = (name) => SHUTDOWN_MS * PHASES[name];
 
   const host = document.getElementById('rack');
   const statusEl = document.getElementById('status');
@@ -252,10 +261,19 @@
     el(g, 'rect', { x, y: y + 8, width: 74, height: h - 16, rx: 2, class: 'port' });
     el(g, 'text', { x: x + 6, y: y + 20, class: 'small' }, 'USV');
     el(g, 'text', { x: x + 6, y: y + 32, class: 'label ups-charge' }, '100 %');
-    for (let i = 0; i < 3; i++) led(g, x + 88 + i * 9, y + 14, i < 2 ? 'ok' : 'off', 2.4).classList.add('ups-led');
+    led(g, x + 88, y + 12, 'ok', 2.4).classList.add('ups-mains');
+    el(g, 'text', { x: x + 94, y: y + 14.5, class: 'small' }, 'NETZ');
+    led(g, x + 128, y + 12, 'off', 2.4).classList.add('ups-on-battery');
+    el(g, 'text', { x: x + 134, y: y + 14.5, class: 'small' }, 'AKKU');
     ctx.ups = { x: x + w, y: y + h - 5 };
-    for (let vx = x + 84; vx < x + w - 50; vx += 7) {
-      el(g, 'path', { d: `M${vx} ${y + 24}v${h - 32}`, class: 'vent' });
+    // Battery gauge, drains when the plug is pulled
+    const bx = x + 84;
+    const bw = w - 140;
+    const battery = el(g, 'g', { class: 'battery' });
+    el(battery, 'rect', { x: bx, y: y + 20, width: bw, height: 16, rx: 2, class: 'port' });
+    el(battery, 'rect', { x: bx + bw, y: y + 25, width: 3, height: 6, rx: 1, class: 'port' });
+    for (let cx = bx + 3; cx + 4 <= bx + bw - 3; cx += 6) {
+      el(battery, 'rect', { x: cx, y: y + 23, width: 4, height: 10, rx: 0.5, class: 'cell on' });
     }
     const cx = x + w - 22;
     const cy = y + h / 2;
@@ -573,46 +591,67 @@
     fan.style.animation = 'none';
     fan.style.transform = `rotate(${angle}deg)`;
     fan.getBoundingClientRect();
-    fan.style.transition = 'transform 1.2s cubic-bezier(.3, .6, .6, 1)';
-    fan.style.transform = `rotate(${angle + 150}deg)`;
+    // The curve starts at twice the average speed: about the running speed of 360° per 1.4 s
+    const duration = phase('fans');
+    fan.style.transition = `transform ${duration}ms cubic-bezier(.3, .6, .6, 1)`;
+    fan.style.transform = `rotate(${angle + (360 / 1.4 / 2) * (duration / 1000)}deg)`;
   }
 
-  // Plug out, the UPS drains its battery, LEDs die one by one, fans coast down, then log out
+  // Counts every UPS down from 100 % to 0 within the drain phase, then calls done
+  function drainBatteries(svg, done) {
+    const batteries = [...svg.querySelectorAll('.battery')].map((node) => ({
+      node,
+      cells: [...node.querySelectorAll('.cell')],
+      text: node.parentNode.querySelector('.ups-charge'),
+    }));
+    let start = null;
+    const tick = (now) => {
+      start ??= now;
+      const charge = Math.max(0, 100 * (1 - (now - start) / phase('drain')));
+      for (const b of batteries) {
+        b.text.textContent = `${Math.ceil(charge)} %`;
+        const lit = Math.ceil((charge / 100) * b.cells.length);
+        b.cells.forEach((cell, i) => cell.classList.toggle('on', i < lit));
+        b.node.classList.toggle('low', charge <= 30);
+        b.node.classList.toggle('crit', charge <= 10);
+      }
+      if (charge > 0) requestAnimationFrame(tick);
+      else done();
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // Plug out: the UPSs keep everything running on battery until it is empty,
+  // then traffic stops, LEDs die one by one, fans coast down, and we log out
   function unplug() {
     if (poweredOff) return;
     const svg = host.querySelector('svg');
     poweredOff = true;
     statusEl.classList.remove('warn');
-    statusEl.textContent = 'Stecker gezogen · Abmeldung …';
     if (!motion.matches || !svg) {
+      statusEl.textContent = 'Stecker gezogen · Abmeldung …';
       location.assign(logoutLink.href);
       return;
     }
-    stopTraffic();
+    statusEl.textContent = 'Stecker gezogen · USV läuft auf Akku …';
     svg.querySelector('.plug-link').classList.add('pulled');
-    svg.querySelectorAll('.strip-led').forEach(ledOff);
-
-    svg.querySelectorAll('.ups-led').forEach((node, i) => {
-      ledOff(node);
-      if (i % 3 === 0) {
-        node.setAttribute('class', 'led warn');
-        blink(node, 0.3, 0.5);
-      }
+    svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
+    svg.querySelectorAll('.ups-on-battery').forEach((node) => {
+      node.setAttribute('class', 'led warn');
+      blink(node, 0.4, 0.7);
     });
-    const charges = svg.querySelectorAll('.ups-charge');
-    let charge = 100;
-    const drain = setInterval(() => {
-      charge = Math.max(0, charge - 9);
-      charges.forEach((node) => { node.textContent = `${charge} %`; });
-      if (!charge) clearInterval(drain);
-    }, 45);
 
-    setTimeout(() => {
+    drainBatteries(svg, () => {
+      statusEl.textContent = 'Akku leer · Abmeldung …';
+      stopTraffic();
       const leds = [...svg.querySelectorAll('.led')].sort(() => Math.random() - 0.5);
-      leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, 500)));
+      leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, phase('ledsOff'))));
       svg.querySelectorAll('.fan').forEach(spinDown);
-    }, 550);
-    setTimeout(() => svg.classList.add('powered-off'), 1100);
+    });
+    setTimeout(() => {
+      svg.style.transition = `opacity ${phase('dim')}ms, filter ${phase('dim')}ms`;
+      svg.classList.add('powered-off');
+    }, phase('dimAt'));
     setTimeout(() => location.assign(logoutLink.href), SHUTDOWN_MS);
   }
 
