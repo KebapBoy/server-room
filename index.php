@@ -19,9 +19,9 @@ const GROUPS_WITHOUT_AUTHELIA_PER_SERVICE = [
     // 'plex' => ['admins', 'friends'],
 ];
 
-// Services whose proxy conf has no usable upstream: conf name => [compose service, label]
+// Services whose proxy conf has no usable upstream: conf name => compose service (also the label)
 const SERVICE_CONTAINERS = [
-    'dashboard' => ['container' => 'swag', 'label' => 'proxy'],
+    'dashboard' => 'swag',
 ];
 
 // Docker networks that do not mean two containers talk to each other
@@ -139,7 +139,7 @@ function find_container(array $environments, string $name, ?int $onlyEnv = null)
 function locate_service(array $service, array $environments): array
 {
     if (isset(SERVICE_CONTAINERS[$service['name']])) {
-        $found = find_container($environments, SERVICE_CONTAINERS[$service['name']]['container']);
+        $found = find_container($environments, SERVICE_CONTAINERS[$service['name']]);
         return $found ? ['container', ...$found] : ['device'];
     }
     $app = $service['app'];
@@ -179,7 +179,7 @@ function build_model(array $visible, array $snapshot, bool $isAdmin): array
     $devices = [];
     foreach ($visible as $service) {
         $link = [
-            'label' => SERVICE_CONTAINERS[$service['name']]['label'] ?? $service['name'],
+            'label' => SERVICE_CONTAINERS[$service['name']] ?? $service['name'],
             'href' => 'https://' . $service['host'] . '/',
         ];
         $place = locate_service($service, $environments);
