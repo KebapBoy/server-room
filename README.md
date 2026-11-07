@@ -145,6 +145,8 @@ The first matching rule wins:
 
 All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it. A countdown "Shutting down 10... 9... … 0" is typed in real seconds while the UPS units run on battery. At 0 the battery is down to 20 % and the UPS powers everything down: traffic stops, LEDs go out and fans coast down while the battery drains to 0 %. The rack stays dark for 2 s, then the page fades out and goes to Authelia's logout.
 
+Plugging back in before the battery is empty cancels the shutdown: the rack boots again, the batteries recharge and the greeting is typed anew.
+
 Without JavaScript or with "reduce motion" the plug is a plain link to the logout. Without JavaScript a sign-out link sits below the tiles.
 
 ## Development

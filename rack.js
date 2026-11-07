@@ -25,6 +25,10 @@
   // down; the countdown hits 0 right then. Everything runs on battery until that point.
   const SHUTDOWN_MS = 10000;
   const LOW_BATTERY = 20;     // % at which the UPS shuts everything down
+  const RECHARGE_MS = 3000;   // after replugging: battery back to 100 %
+  const BOOT_MS = 2500;       // after replugging: LEDs back on one by one, fans up to speed
+  const RESTORE_FADE_MS = 600; // after replugging: rack and page regain their colour
+  const FAN_TURN_S = 1.4;     // one fan turn, as the spin animation in style.css
   // What follows, as fractions of SHUTDOWN_MS so it all scales with it
   const PHASES = {
     powerDown: 0.5,           // 20 → 0 %: LEDs die one by one, fans coast to a stop
@@ -48,6 +52,11 @@
   let traffic = null;
   let sessionLost = false;
   let poweredOff = false;
+  // Running shutdown: its timers, the battery animation frame and the charge shown last
+  let shutdown = null;
+  let lastRoutes = [];
+  let spinGeneration = 0;     // bumped on every unplug/replug so running fan loops stop
+  let booting = [];           // pending LED restores after a replug: { timer, fn }
 
   const STATE_TEXT = {
     exited: 'stopped', dead: 'crashed',
@@ -639,6 +648,7 @@
     if (narrow) svg.style.maxWidth = Math.round(width * 1.15) + 'px';
     else svg.style.width = Math.round(choice.width) + 'px';
     host.replaceChildren(svg);
+    lastRoutes = routes;
     startTraffic(svg, routes);
     updateStatus();
   }
@@ -673,9 +683,9 @@
 
   // ---- logout: pull the plug ----------------------------------------------
 
+  // Dropping the classes also stops blinking; the inline blink timing stays for a restore
   function ledOff(node) {
     node.setAttribute('class', 'led');
-    node.style.animation = 'none';
   }
 
   // Lets each fan coast from its current angle to a stop
@@ -688,17 +698,31 @@
     // The curve starts at twice the average speed: about the running speed of 360° per 1.4 s
     const duration = phase('powerDown');
     fan.style.transition = `transform ${duration}ms cubic-bezier(.3, .6, .6, 1)`;
-    fan.style.transform = `rotate(${angle + (360 / 1.4 / 2) * (duration / 1000)}deg)`;
+    fan.style.transform = `rotate(${angle + (360 / FAN_TURN_S / 2) * (duration / 1000)}deg)`;
+  }
+
+  function batteriesIn(svg) {
+    return [...svg.querySelectorAll('.battery')].map((node) => ({
+      node,
+      cells: [...node.querySelectorAll('.cell')],
+      text: node.parentNode.querySelector('.ups-charge'),
+    }));
+  }
+
+  function showCharge(batteries, charge) {
+    for (const b of batteries) {
+      b.text.textContent = `${Math.ceil(charge)} %`;
+      const lit = Math.ceil((charge / 100) * b.cells.length);
+      b.cells.forEach((cell, i) => cell.classList.toggle('on', i < lit));
+      b.node.classList.toggle('low', charge <= 30);
+      b.node.classList.toggle('crit', charge <= 10);
+    }
   }
 
   // Shows every UPS draining to LOW_BATTERY within SHUTDOWN_MS and on to 0 % within the
   // powerDown phase (the shutdown itself runs on timers in unplug())
   function drainBatteries(svg) {
-    const batteries = [...svg.querySelectorAll('.battery')].map((node) => ({
-      node,
-      cells: [...node.querySelectorAll('.cell')],
-      text: node.parentNode.querySelector('.ups-charge'),
-    }));
+    const batteries = batteriesIn(svg);
     let start = null;
     const tick = (now) => {
       start ??= now;
@@ -706,16 +730,61 @@
       const charge = t < SHUTDOWN_MS
         ? 100 - ((100 - LOW_BATTERY) * t) / SHUTDOWN_MS
         : Math.max(0, LOW_BATTERY * (1 - (t - SHUTDOWN_MS) / phase('powerDown')));
-      for (const b of batteries) {
-        b.text.textContent = `${Math.ceil(charge)} %`;
-        const lit = Math.ceil((charge / 100) * b.cells.length);
-        b.cells.forEach((cell, i) => cell.classList.toggle('on', i < lit));
-        b.node.classList.toggle('low', charge <= 30);
-        b.node.classList.toggle('crit', charge <= 10);
-      }
-      if (charge > 0) requestAnimationFrame(tick);
+      showCharge(batteries, charge);
+      shutdown.charge = charge;
+      if (charge > 0) shutdown.frame = requestAnimationFrame(tick);
+    };
+    shutdown.frame = requestAnimationFrame(tick);
+  }
+
+  // Back on mains: recharge from where the battery was to 100 %
+  function chargeBatteries(svg, from) {
+    const batteries = batteriesIn(svg);
+    let start = null;
+    const tick = (now) => {
+      start ??= now;
+      const charge = Math.min(100, from + ((100 - from) * (now - start)) / RECHARGE_MS);
+      showCharge(batteries, charge);
+      if (charge < 100) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
+  }
+
+  // Spins a stopped fan back up to the speed of the CSS animation, then hands over to it
+  // at the same angle so there is no jump
+  function spinUp(fan) {
+    const generation = spinGeneration;
+    const m = new DOMMatrixReadOnly(getComputedStyle(fan).transform);
+    let angle = (Math.atan2(m.b, m.a) * 180) / Math.PI;
+    const fullSpeed = 360 / FAN_TURN_S;
+    fan.style.transition = 'none';
+    let start = null;
+    let last = null;
+    const tick = (now) => {
+      if (generation !== spinGeneration) return;
+      start ??= now;
+      angle += fullSpeed * Math.min(1, (now - start) / BOOT_MS) * ((now - (last ?? now)) / 1000);
+      last = now;
+      if (now - start < BOOT_MS) {
+        fan.style.transform = `rotate(${angle}deg)`;
+        requestAnimationFrame(tick);
+        return;
+      }
+      const turn = (((angle % 360) + 360) % 360) / 360;
+      fan.style.transform = '';
+      fan.style.animation = '';
+      fan.style.animationDelay = `${-turn * FAN_TURN_S}s`;
+    };
+    requestAnimationFrame(tick);
+  }
+
+  // Runs any LED restores still pending from a replug right away
+  function finishBooting() {
+    for (const { timer, fn } of booting) {
+      clearTimeout(timer);
+      fn();
+    }
+    booting = [];
   }
 
   function logout() {
@@ -729,6 +798,12 @@
     if (poweredOff) return;
     const svg = host.querySelector('svg');
     poweredOff = true;
+    finishBooting();
+    spinGeneration++;
+    // Every LED's classes as they are now, so a replug can bring them back exactly
+    const leds = new Map([...svg.querySelectorAll('.led')].map((node) => [node, node.getAttribute('class')]));
+    shutdown = { timers: [], frame: null, charge: 100, svg, leds };
+    const later = (fn, ms) => shutdown.timers.push(setTimeout(fn, ms));
     if (!motion.matches || !svg) {
       setStatus('Plug pulled · signing out …');
       logout();
@@ -746,7 +821,10 @@
       host.append(target);
     }
     document.dispatchEvent(new CustomEvent('shutdown', { detail: { ms: SHUTDOWN_MS, target } }));
-    svg.querySelector('.plug-link').classList.add('pulled');
+    const plugLink = svg.querySelector('.plug-link');
+    plugLink.classList.add('pulled');
+    plugLink.setAttribute('aria-label', 'Plug back in to stay signed in');
+    plugLink.querySelector('title').textContent = 'Plug back in · stay signed in';
     svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
     svg.querySelectorAll('.ups-on-battery').forEach((node) => {
       node.setAttribute('class', 'led warn ups-on-battery');
@@ -755,30 +833,81 @@
 
     // At LOW_BATTERY the UPS shuts everything down; its own BATT LED stays on until 0 %
     drainBatteries(svg);
-    setTimeout(() => {
+    later(() => {
       setStatus('Battery low · powering down …', { warn: true });
       stopTraffic();
       const leds = [...svg.querySelectorAll('.led:not(.ups-on-battery)')].sort(() => Math.random() - 0.5);
-      leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, phase('powerDown') * 0.9)));
+      leds.forEach((node) => later(() => ledOff(node), rand(0, phase('powerDown') * 0.9)));
       svg.querySelectorAll('.fan').forEach(spinDown);
     }, SHUTDOWN_MS);
-    setTimeout(() => {
+    later(() => {
       setStatus('Battery empty · signing out …', { warn: true });
+      // Too late to plug back in now
+      shutdown.final = true;
+      svg.querySelectorAll('.plug-link').forEach((link) => {
+        link.classList.add('locked');
+        link.setAttribute('aria-disabled', 'true');
+      });
       svg.querySelectorAll('.led').forEach(ledOff);
       svg.style.transition = `opacity ${phase('fadeOut') / 2}ms, filter ${phase('fadeOut') / 2}ms`;
       svg.classList.add('powered-off');
     }, SHUTDOWN_MS + phase('powerDown'));
-    setTimeout(() => {
+    later(() => {
       document.body.style.transition = `opacity ${phase('fadeOut')}ms ease-in`;
       document.body.style.opacity = '0';
     }, SHUTDOWN_MS + phase('powerDown') + phase('dark'));
-    setTimeout(logout, SHUTDOWN_MS + phase('powerDown') + phase('dark') + phase('fadeOut') + 100);
+    later(logout, SHUTDOWN_MS + phase('powerDown') + phase('dark') + phase('fadeOut') + 100);
+  }
+
+  // Plugging back in before the logout cancels the shutdown and gently reverses it: the
+  // plug slides back, the rack regains its colour, the LEDs come back one by one as the
+  // machines boot, fans spin up, the batteries recharge and traffic resumes
+  function replug() {
+    const { timers, frame, charge, svg, leds } = shutdown;
+    timers.forEach(clearTimeout);
+    cancelAnimationFrame(frame);
+    shutdown = null;
+    poweredOff = false;
+    spinGeneration++;
+    document.dispatchEvent(new CustomEvent('restore', { detail: { ms: BOOT_MS } }));
+
+    document.body.style.transition = `opacity ${RESTORE_FADE_MS}ms`;
+    document.body.style.opacity = '';
+    svg.style.transition = `opacity ${RESTORE_FADE_MS}ms, filter ${RESTORE_FADE_MS}ms`;
+    svg.classList.remove('powered-off');
+    const plugLink = svg.querySelector('.plug-link');
+    plugLink.classList.remove('pulled');
+    plugLink.setAttribute('aria-label', 'Pull the plug to sign out');
+    plugLink.querySelector('title').textContent = 'Pull the plug · sign out';
+
+    // Mains is back at once; the machines take a moment to boot
+    for (const [node, classes] of leds) {
+      if (/\b(strip-led|ups-mains|ups-on-battery)\b/.test(classes)) {
+        node.setAttribute('class', classes);
+        continue;
+      }
+      if (node.getAttribute('class') === classes) continue;
+      const fn = () => node.setAttribute('class', classes);
+      booting.push({ timer: setTimeout(fn, rand(BOOT_MS * 0.15, BOOT_MS)), fn });
+    }
+    // Only fans that had already stopped spin up; the others never lost power
+    svg.querySelectorAll('.fan').forEach((fan) => {
+      if (fan.style.animationName === 'none') spinUp(fan);
+    });
+    chargeBatteries(svg, charge);
+    setStatus('Power restored · booting …');
+    setTimeout(() => {
+      if (poweredOff) return;
+      if (!traffic) startTraffic(svg, lastRoutes);
+      updateStatus();
+    }, BOOT_MS);
   }
 
   function onLogoutClick(event) {
     if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    unplug();
+    if (!shutdown) unplug();
+    else if (!shutdown.final) replug();
   }
 
   async function poll() {

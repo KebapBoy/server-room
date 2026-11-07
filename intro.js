@@ -1,22 +1,32 @@
 // Types the greeting in #intro like a typewriter. The full text is already in the
 // HTML (and in its aria-label), so without JS or with reduced motion it simply stands there.
-// When rack.js reports the plug pulled ("shutdown" event), it counts down to the logout.
+// When rack.js reports the plug pulled ("shutdown" event), it counts down to the logout;
+// plugged back in ("restore" event), it reports the reboot and then greets again.
 (() => {
   'use strict';
 
   const root = document.getElementById('intro');
   if (!root) return;
   const animate = matchMedia('(prefers-reduced-motion: no-preference)').matches;
+  const greeting = [...root.childNodes].map((node) => node.cloneNode(true));
+  const greetingLabel = root.getAttribute('aria-label');
 
   const caret = document.createElement('span');
   caret.className = 'caret';
   caret.setAttribute('aria-hidden', 'true');
   let timer = null;
+  let flush = null;           // writes out whatever the current type() has not typed yet
+  let countdown = [];
+  let countdownTarget = null;
 
   // Types the parts ({ node, text }) one after another, with the caret right behind the text
   function type(parts, pace) {
     let index = 0;
     let pos = 0;
+    flush = () => {
+      for (; index < parts.length; index++, pos = 0) parts[index].node.textContent += parts[index].text.slice(pos);
+      parts.at(-1).node.after(caret);
+    };
     const step = () => {
       while (index < parts.length && pos >= parts[index].text.length) {
         index++;
@@ -39,16 +49,28 @@
     return span;
   }
 
+  function typeGreeting(delay) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const parts = [];
+    while (walker.nextNode()) parts.push({ node: walker.currentNode, text: walker.currentNode.textContent });
+    if (!parts.length) return;
+    for (const part of parts) part.node.textContent = '';
+    parts[0].node.after(caret);
+    // Short pause after punctuation, a little jitter otherwise
+    timer = setTimeout(() => type(parts, (ch) => (/[!,]/.test(ch) ? 420 : 45 + Math.random() * 75)), delay);
+  }
+
   // rack.js dispatches this with the shutdown duration when the plug is pulled, and
   // optionally another element to count down in
   document.addEventListener('shutdown', (event) => {
     clearTimeout(timer);
+    countdown.forEach(clearTimeout);
     const seconds = Math.max(1, Math.round(event.detail.ms / 1000));
     const head = document.createTextNode('');
     const count = document.createTextNode('');
-    const target = event.detail.target || root;
-    target.replaceChildren(line(head), line(count));
-    if (target === root) root.setAttribute('aria-label', 'Shutting down');
+    countdownTarget = event.detail.target || root;
+    countdownTarget.replaceChildren(line(head), line(count));
+    if (countdownTarget === root) root.setAttribute('aria-label', 'Shutting down');
     const number = (n) => (n ? `${n}... ` : '0');
     if (!animate) {
       head.textContent = 'Shutting down ';
@@ -58,21 +80,43 @@
     head.after(caret);
     // One number per second; 0 arrives when the UPS shuts the services down
     type([{ node: head, text: 'Shutting down ' }, { node: count, text: number(seconds) }], () => 25);
+    countdown = [];
     for (let n = seconds - 1; n >= 0; n--) {
-      setTimeout(() => type([{ node: count, text: number(n) }], () => 40), (seconds - n) * 1000);
+      countdown.push(setTimeout(() => type([{ node: count, text: number(n) }], () => 40), (seconds - n) * 1000));
     }
   });
 
-  if (!animate) return;
+  // Plugged back in before the logout: report the reboot right behind the countdown for as
+  // long as rack.js needs to boot (detail.ms), then greet again
+  document.addEventListener('restore', (event) => {
+    clearTimeout(timer);
+    // Finish a countdown number that was half typed
+    flush?.();
+    countdown.forEach(clearTimeout);
+    const target = countdownTarget || root;
+    countdownTarget = target;
+    const tail = document.createTextNode('');
+    target.append(line(tail));
+    if (target === root) root.setAttribute('aria-label', 'Power restored, rebooting');
+    const greet = () => {
+      if (target !== root) target.remove();
+      countdownTarget = null;
+      root.replaceChildren(...greeting.map((node) => node.cloneNode(true)));
+      root.setAttribute('aria-label', greetingLabel);
+      if (animate) typeGreeting(300);
+    };
+    countdown = [setTimeout(greet, event.detail.ms + 500)];
+    const text = 'Power restored... rebooting...';
+    if (!animate) {
+      tail.textContent = text;
+      return;
+    }
+    tail.after(caret);
+    type([{ node: tail, text }], (ch) => (ch === '.' ? 140 : 35));
+  });
 
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const parts = [];
-  while (walker.nextNode()) parts.push({ node: walker.currentNode, text: walker.currentNode.textContent });
-  if (!parts.length) return;
+  if (!animate) return;
   // Keep the full height so nothing below jumps while the text grows
   root.style.minHeight = root.offsetHeight + 'px';
-  for (const part of parts) part.node.textContent = '';
-  parts[0].node.after(caret);
-  // Short pause after punctuation, a little jitter otherwise
-  timer = setTimeout(() => type(parts, (ch) => (/[!,]/.test(ch) ? 420 : 45 + Math.random() * 75)), 500);
+  typeGreeting(500);
 })();

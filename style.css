@@ -148,6 +148,7 @@ h1 b { color: var(--accent); }
 .plug-link:hover .plug, .plug-link:focus-visible .plug { transform: translateX(-4px); }
 .plug-link:hover .plug-body, .plug-link:focus-visible .plug-body { stroke: var(--accent); stroke-width: 1.8; }
 .plug-link:hover text, .plug-link:focus-visible text { fill: var(--accent); }
+.plug-link.locked { pointer-events: none; }
 .plug-link.pulled .plug { transform: translateX(-22px); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
 .rack-svg.powered-off { opacity: .35; filter: grayscale(1); }
 
