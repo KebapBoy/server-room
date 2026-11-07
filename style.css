@@ -194,6 +194,7 @@ h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
 .fiber-strand { stroke: var(--line); stroke-width: .6; stroke-dasharray: 2 1; }
 .channel { stroke: var(--faint); stroke-width: 1; }
 .packet { fill: var(--accent); filter: drop-shadow(0 0 2px var(--accent)); }
+.packet.light { fill: var(--patch-fiber, var(--accent)); filter: drop-shadow(0 0 2px var(--patch-fiber, var(--accent))); }
 
 .led { stroke: var(--muted); stroke-width: .8; fill: var(--bg); }
 .led.ok { fill: var(--ok); stroke: var(--ok); filter: drop-shadow(0 0 1.5px var(--ok)); }
@@ -282,6 +283,8 @@ h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
   .sfp-bail { stroke: var(--plastic); stroke-width: .7; }
   /* Light packets show up on every cable colour */
   .packet { fill: #fff; stroke: rgba(0, 0, 0, .5); stroke-width: .5; filter: drop-shadow(0 0 2px rgba(255, 255, 255, .9)); }
+  /* Light pulses in the fibre: white core, aqua glow */
+  .packet.light { fill: #fff; stroke: none; filter: drop-shadow(0 0 1.5px var(--patch-fiber)) drop-shadow(0 0 3px var(--patch-fiber)); }
   .pin { stroke: var(--metal-lo); }
   .tag { fill: var(--tag); stroke: var(--tag-edge); }
   .tag-strap { stroke: var(--tag-edge); }

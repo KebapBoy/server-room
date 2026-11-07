@@ -9,7 +9,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 - Admins see every stack and container; everyone else only the containers of their own services. The filter runs on the server.
 - Sign out by pulling the power plug of the rack, with a little shutdown animation (see below).
 - Greets the user by first name, typed like on a typewriter in a terminal window.
-- Patch cables to a switch and a fibre link between the racks.
+- Patch cables to a switch and a fibre link between the racks, with light pulses running both ways.
 - Works without JavaScript as a list of tiles.
 - Follows light and dark mode, "more contrast" and "reduce motion".
 
@@ -78,7 +78,7 @@ The settings are constants at the top of `index.php`. Service names are proxy co
 | `SERVICE_PATHS` |  | Start path for services whose UI does not live at `/` |
 | `SNAPSHOT_MAX_AGE` | `180` | Seconds after which the stack snapshot counts as stale |
 
-Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`, `LOW_BATTERY`).
+Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`, `LOW_BATTERY`, `FIBER_GAP_MS`).
 
 ## Stack snapshot
 

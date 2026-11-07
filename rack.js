@@ -16,7 +16,8 @@
   const MIN_UNITS = 14;
   const POLL_MS = 15000;
   const FONT_W = 0.6;         // monospace glyph width relative to font size
-  const MAX_PACKETS = 24;
+  const MAX_PACKETS = 40;      // on copper; fibre runs its own streams (FIBER_GAP_MS)
+  const FIBER_GAP_MS = [90, 260];  // fibre: between two light pulses in one direction
   const NEW_TAB = { target: '_blank', rel: 'noopener' };  // service links always open a new tab
   const TOP = 26;             // room above the racks for the inter-rack cable
   const FLOOR_H = 84;         // room below the racks for the power strip and the plug
@@ -571,7 +572,7 @@
     const path = drawPatchCable(layer, points, 'fiber');
     linkUp(a.uplink);
     linkUp(b.uplink);
-    routes.push({ path, from: [a.uplink.act], to: [b.uplink.act] });
+    routes.push({ path, from: [a.uplink.act], to: [b.uplink.act], fiber: true });
   }
 
   // Wall socket with the plug in it, drawn sideways and PLUG_SCALE times larger around
@@ -667,21 +668,34 @@
     if (!motion.matches || !routes.length) return;
     for (const r of routes) r.length = r.path.getTotalLength();
     const layer = el(svg, 'g', { class: 'packets' });
+    const copper = routes.filter((r) => !r.fiber);
+    // Fibre: a dense, fast stream of light pulses in each direction at once
+    const streams = routes.filter((r) => r.fiber).flatMap((route) => [true, false].map((forward) => ({ route, forward, next: 0 })));
     const active = [];
+    let copperCount = 0;
     let next = 0;
     let frame;
+    const send = (route, forward, now, speed, cls, r) => {
+      const dot = el(layer, 'circle', { r, class: cls });
+      active.push({ route, dot, forward, start: now, duration: (route.length / speed) * 1000 });
+    };
     const tick = (now) => {
-      if (now >= next && active.length < MAX_PACKETS) {
-        const route = pick(routes);
-        const dot = el(layer, 'circle', { r: 1.9, class: 'packet' });
-        active.push({ route, dot, forward: Math.random() < 0.5, start: now, duration: (route.length / rand(70, 150)) * 1000 });
-        next = now + rand(120, 480);
+      if (copper.length && now >= next && copperCount < MAX_PACKETS) {
+        send(pick(copper), Math.random() < 0.5, now, rand(110, 220), 'packet', 1.9);
+        copperCount++;
+        next = now + rand(60, 240);
+      }
+      for (const s of streams) {
+        if (now < s.next) continue;
+        send(s.route, s.forward, now, rand(520, 680), 'packet light', 1.3);
+        s.next = now + rand(...FIBER_GAP_MS);
       }
       for (let i = active.length - 1; i >= 0; i--) {
         const p = active[i];
         const t = (now - p.start) / p.duration;
         if (t >= 1) {
           p.dot.remove();
+          if (!p.route.fiber) copperCount--;
           flash(p.forward ? p.route.to : p.route.from);
           active.splice(i, 1);
           continue;
