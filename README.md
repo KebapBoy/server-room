@@ -134,7 +134,7 @@ The first matching rule wins:
 
 ### The rack
 
-- Each rack has a head unit with its name and a status LED.
+- Each rack has a head unit with a name plate, a status LED and the number of active modules.
 
 ### Signing out
 

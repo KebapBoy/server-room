@@ -112,7 +112,7 @@
 
   function planRack(rack, index, cols, devices) {
     const plan = [
-      { type: 'head', u: 1 },
+      { type: 'head', u: 2 },
       { type: 'switch', u: 1 },
       index % 2 ? { type: 'blank', u: 1, variant: 'vent' } : { type: 'patch', u: 1 },
       { type: 'cable', u: 1 },
@@ -165,16 +165,20 @@
   }
 
   function drawHead(g, box, rack, ctx) {
-    const { x, y, w } = box;
+    const { x, y, w, h } = box;
     const all = rack.stacks.flatMap((s) => s.modules);
     const running = all.filter((m) => m.state === 'running').length;
     const name = rack.name.toUpperCase();
-    el(g, 'text', { x, y: y + 15, class: 'title' }, name);
-    const lx = x + name.length * 10 * FONT_W * 1.2 + 10;
+    // Name plate: recessed field with the environment name and its status LED
+    const nameW = name.length * 17 * (FONT_W + 0.14);
+    const plateW = nameW + 34;
+    el(g, 'rect', { x, y: y + 7, width: plateW, height: h - 14, rx: 2, class: 'port' });
+    el(g, 'text', { x: x + 9, y: y + h / 2 + 6, class: 'title' }, name);
+    const lx = x + 9 + nameW + 10;
     const state = !rack.online ? 'bad' : model.stale ? 'warn' : 'ok';
-    const node = led(g, lx, y + 11, state, 3);
+    const node = led(g, lx, y + h / 2, state, 3.5);
     if (state !== 'ok') blink(node, 0.8, 1.4);
-    if (all.length) el(g, 'text', { x: lx + 9, y: y + 14, class: 'small' }, `${running}/${all.length} AKTIV`);
+    if (all.length) el(g, 'text', { x: x + plateW + 10, y: y + h / 2 + 3, class: 'count' }, `${running}/${all.length} AKTIV`);
 
     let right = x + w;
     for (const link of [...rack.links].reverse()) {
@@ -182,8 +186,8 @@
       const pw = label.length * 8 * FONT_W + 12;
       right -= pw;
       const a = el(g, 'a', { href: link.href, class: 'pill-link', 'aria-label': link.label + ' öffnen' });
-      el(a, 'rect', { x: right, y: y + 4, width: pw, height: 14, rx: 7, class: 'pill' });
-      el(a, 'text', { x: right + 6, y: y + 14, class: 'pill-text' }, label);
+      el(a, 'rect', { x: right, y: y + h / 2 - 7, width: pw, height: 14, rx: 7, class: 'pill' });
+      el(a, 'text', { x: right + 6, y: y + h / 2 + 3, class: 'pill-text' }, label);
       right -= 6;
     }
     ctx.headLed = node;

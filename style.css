@@ -44,7 +44,8 @@ h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
 .rack svg { display: block; width: 100%; height: auto; margin: 0 auto; }
 .rack-svg { font-family: var(--mono); fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .rack-svg text { fill: var(--line); stroke: none; }
-.rack-svg .title { font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.rack-svg .title { font-size: 17px; font-weight: 700; letter-spacing: .14em; }
+.rack-svg .count { font-size: 8.5px; letter-spacing: .08em; fill: var(--muted); }
 .rack-svg .stack-name { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
 .rack-svg .label { font-size: 9.5px; }
 .rack-svg .small { font-size: 7px; letter-spacing: .08em; fill: var(--muted); }
