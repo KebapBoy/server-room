@@ -140,7 +140,10 @@ h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
 /* Countdown below the stacked racks, left of the plug (rack.js) */
 .rack { position: relative; }
 .shutdown-text { position: absolute; left: 0; margin: 0; font: 600 1rem/1.5 var(--mono); }
-.rack svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+.rack-stage { position: relative; margin: 0 auto; }
+.rack svg { display: block; width: 100%; height: auto; }
+/* LEDs, fans and packets, laid over the rack so only they repaint (rack.js) */
+.rack .rack-live { position: absolute; inset: 0; height: 100%; pointer-events: none; }
 .rack-svg { font-family: var(--mono); fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .rack-svg text { fill: var(--line); stroke: none; }
 .rack-svg .title { font-size: 17px; font-weight: 700; letter-spacing: .14em; }
@@ -193,8 +196,10 @@ h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
 .sfp-bail { stroke: var(--line); stroke-width: .6; }
 .fiber-strand { stroke: var(--line); stroke-width: .6; stroke-dasharray: 2 1; }
 .channel { stroke: var(--faint); stroke-width: 1; }
-.packet { fill: var(--accent); filter: drop-shadow(0 0 2px var(--accent)); }
-.packet.light { fill: var(--patch-fiber, var(--accent)); filter: drop-shadow(0 0 2px var(--patch-fiber, var(--accent))); }
+/* Packets: a dot with a glow around it, drawn by the gradients g-packet and g-light */
+:root { --packet-core: var(--accent); --packet-ring: var(--accent); --packet-glow: var(--accent); --light-core: var(--patch-fiber); }
+.packet { fill: url(#g-packet); }
+.packet.light { fill: url(#g-light); }
 
 .led { stroke: var(--muted); stroke-width: .8; fill: var(--bg); }
 .led.ok { fill: var(--ok); stroke: var(--ok); filter: drop-shadow(0 0 1.5px var(--ok)); }
@@ -282,9 +287,7 @@ h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
   .sfp-module { fill: url(#g-face); stroke: var(--edge); stroke-width: .5; }
   .sfp-bail { stroke: var(--plastic); stroke-width: .7; }
   /* Light packets show up on every cable colour */
-  .packet { fill: #fff; stroke: rgba(0, 0, 0, .5); stroke-width: .5; filter: drop-shadow(0 0 2px rgba(255, 255, 255, .9)); }
-  /* Light pulses in the fibre: white core, aqua glow */
-  .packet.light { fill: #fff; stroke: none; filter: drop-shadow(0 0 1.5px var(--patch-fiber)) drop-shadow(0 0 3px var(--patch-fiber)); }
+  :root { --packet-core: #fff; --packet-ring: rgba(0, 0, 0, .5); --packet-glow: #fff; --light-core: #fff; }
   .pin { stroke: var(--metal-lo); }
   .tag { fill: var(--tag); stroke: var(--tag-edge); }
   .tag-strap { stroke: var(--tag-edge); }

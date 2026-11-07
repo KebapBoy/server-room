@@ -162,11 +162,15 @@
   // Gradients and the brushed texture used by the "Material" rules in style.css
   function addDefs(svg) {
     const defs = el(svg, 'defs');
-    const stops = (parent, list) => list.forEach(([offset, colour]) => el(parent, 'stop', { offset, style: `stop-color: var(${colour})` }));
+    const stops = (parent, list) => list.forEach(([offset, colour, opacity = 1]) => el(parent, 'stop', { offset, style: `stop-color: var(${colour}); stop-opacity: ${opacity}` }));
     stops(el(defs, 'linearGradient', { id: 'g-face', x1: 0, y1: 0, x2: 0, y2: 1 }), [[0, '--metal-hi'], [0.55, '--metal'], [1, '--metal-lo']]);
     stops(el(defs, 'linearGradient', { id: 'g-sled', x1: 0, y1: 0, x2: 0, y2: 1 }), [[0, '--sled-hi'], [1, '--sled-lo']]);
     stops(el(defs, 'linearGradient', { id: 'g-frame', x1: 0, y1: 0, x2: 1, y2: 0 }), [[0, '--steel-lo'], [0.5, '--steel-hi'], [1, '--steel-lo']]);
     stops(el(defs, 'radialGradient', { id: 'g-screw', cx: 0.35, cy: 0.35, r: 0.75 }), [[0, '--metal-hi'], [1, '--metal-lo']]);
+    // Packets glow by a gradient fading out, not by a filter: a filter on every moving dot
+    // has to be drawn anew on every frame
+    stops(el(defs, 'radialGradient', { id: 'g-packet' }), [[0, '--packet-core'], [0.45, '--packet-core'], [0.55, '--packet-ring'], [0.62, '--packet-glow', 0.7], [1, '--packet-glow', 0]]);
+    stops(el(defs, 'radialGradient', { id: 'g-light' }), [[0, '--light-core'], [0.3, '--light-core'], [0.5, '--patch-fiber', 0.9], [1, '--patch-fiber', 0]]);
     const brush = el(defs, 'pattern', { id: 'p-brush', width: 7, height: 2, patternUnits: 'userSpaceOnUse' });
     el(brush, 'path', { d: 'M0 0.5H4.5M5.5 1.5H7', class: 'brush-line' });
   }
@@ -664,10 +668,37 @@
     traffic = null;
   }
 
+  // x, y every unit of length along the path (the last point at its very end)
+  function sampleRoute(path, length) {
+    const samples = [];
+    for (let d = 0; d < length; d++) {
+      const point = path.getPointAtLength(d);
+      samples.push([point.x, point.y]);
+    }
+    const end = path.getPointAtLength(length);
+    samples.push([end.x, end.y]);
+    return samples;
+  }
+
+  // Point at fraction t (0–1) of a sampled route, interpolated between two samples
+  function pointAt(samples, t) {
+    const pos = t * (samples.length - 1);
+    const i = Math.min(Math.floor(pos), samples.length - 2);
+    const f = pos - i;
+    const [ax, ay] = samples[i];
+    const [bx, by] = samples[i + 1];
+    return [ax + (bx - ax) * f, ay + (by - ay) * f];
+  }
+
   function startTraffic(svg, routes) {
     stopTraffic();
     if (!motion.matches || !routes.length) return;
-    for (const r of routes) r.length = r.path.getTotalLength();
+    // Positions along a route come from a table sampled once: getPointAtLength() per packet
+    // and frame cost more than everything else on the page together
+    for (const r of routes) {
+      r.length ??= r.path.getTotalLength();
+      r.samples ??= sampleRoute(r.path, r.length);
+    }
     const layer = el(svg, 'g', { class: 'packets' });
     // Busy routes come up three times as often as quiet ones
     const copper = routes.filter((r) => !r.fiber).flatMap((r) => (r.quiet ? [r] : [r, r, r]));
@@ -683,13 +714,13 @@
     };
     const tick = (now) => {
       if (copper.length && now >= next && copperCount < MAX_PACKETS) {
-        send(pick(copper), Math.random() < 0.5, now, rand(110, 220), 'packet', 1.9);
+        send(pick(copper), Math.random() < 0.5, now, rand(110, 220), 'packet', 4.2);
         copperCount++;
         next = now + rand(60, 240);
       }
       for (const s of streams) {
         if (now < s.next) continue;
-        send(s.route, s.forward, now, rand(520, 680), 'packet light', 1.3);
+        send(s.route, s.forward, now, rand(520, 680), 'packet light', 4.3);
         s.next = now + rand(...FIBER_GAP_MS);
       }
       for (let i = active.length - 1; i >= 0; i--) {
@@ -702,9 +733,9 @@
           active.splice(i, 1);
           continue;
         }
-        const point = p.route.path.getPointAtLength((p.forward ? t : 1 - t) * p.route.length);
-        p.dot.setAttribute('cx', point.x.toFixed(1));
-        p.dot.setAttribute('cy', point.y.toFixed(1));
+        const [x, y] = pointAt(p.route.samples, p.forward ? t : 1 - t);
+        p.dot.setAttribute('cx', x.toFixed(1));
+        p.dot.setAttribute('cy', y.toFixed(1));
       }
       frame = requestAnimationFrame(tick);
     };
@@ -786,13 +817,32 @@
     for (let i = 1; i < contexts.length; i++) drawInterRack(cables, contexts[i - 1], contexts[i], routes);
     const width = drawPower(el(svg, 'g', { class: 'power' }), contexts, floor + FLOOR_H / 2);
 
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    if (narrow) svg.style.maxWidth = Math.round(width * 1.15) + 'px';
-    else svg.style.width = Math.round(choice.width) + 'px';
-    host.replaceChildren(svg);
+    const live = el(null, 'svg', { class: 'rack-svg rack-live', 'aria-hidden': 'true' });
+    liftAnimated(svg, live);
+    for (const node of [svg, live]) node.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const stage = document.createElement('div');
+    stage.className = 'rack-stage';
+    if (narrow) stage.style.maxWidth = Math.round(width * 1.15) + 'px';
+    else stage.style.width = Math.round(choice.width) + 'px';
+    stage.append(svg, live);
+    host.replaceChildren(stage);
     lastRoutes = routes;
-    startTraffic(svg, routes);
+    startTraffic(live, routes);
     updateStatus();
+  }
+
+  // Everything that changes all the time (LEDs, fans, the packets from startTraffic()) lives
+  // in a second SVG on top of the rack, keeping the transforms it had there. Otherwise the
+  // browser repaints the whole rack, gradients and all, on every frame.
+  function liftAnimated(svg, live) {
+    for (const node of svg.querySelectorAll('.led, .fan')) {
+      let matrix = new DOMMatrix();
+      for (let up = node.parentNode; up !== svg; up = up.parentNode) {
+        const t = up.transform?.baseVal.consolidate();
+        if (t) matrix = DOMMatrix.fromMatrix(t.matrix).multiply(matrix);
+      }
+      (matrix.isIdentity ? live : el(live, 'g', { transform: matrix.toString() })).append(node);
+    }
   }
 
   // Shows a status on every rack display and, for screen readers, in #status
@@ -939,12 +989,13 @@
   function unplug() {
     if (poweredOff) return;
     const svg = host.querySelector('svg');
+    const live = host.querySelector('.rack-live');
     poweredOff = true;
     finishBooting();
     spinGeneration++;
     // Every LED's classes as they are now, so a replug can bring them back exactly
-    const leds = new Map([...svg.querySelectorAll('.led')].map((node) => [node, node.getAttribute('class')]));
-    shutdown = { timers: [], frame: null, charge: 100, svg, leds };
+    const leds = new Map([...live.querySelectorAll('.led')].map((node) => [node, node.getAttribute('class')]));
+    shutdown = { timers: [], frame: null, charge: 100, svg, live, leds };
     const later = (fn, ms) => shutdown.timers.push(setTimeout(fn, ms));
     if (!motion.matches || !svg) {
       setStatus('Plug pulled · signing out …');
@@ -971,8 +1022,8 @@
     plugLink.classList.add('pulled');
     plugLink.setAttribute('aria-label', 'Plug back in to stay signed in');
     plugLink.querySelector('title').textContent = 'Plug back in · stay signed in';
-    svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
-    svg.querySelectorAll('.ups-on-battery').forEach((node) => {
+    live.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
+    live.querySelectorAll('.ups-on-battery').forEach((node) => {
       node.setAttribute('class', 'led warn ups-on-battery');
       blink(node, 0.4, 0.7);
     });
@@ -982,9 +1033,9 @@
     later(() => {
       setStatus('Battery low · powering down …', { warn: true });
       stopTraffic();
-      const leds = [...svg.querySelectorAll('.led:not(.ups-on-battery)')].sort(() => Math.random() - 0.5);
+      const leds = [...live.querySelectorAll('.led:not(.ups-on-battery)')].sort(() => Math.random() - 0.5);
       leds.forEach((node) => later(() => ledOff(node), rand(0, phase('powerDown') * 0.9)));
-      svg.querySelectorAll('.fan').forEach(spinDown);
+      live.querySelectorAll('.fan').forEach(spinDown);
     }, SHUTDOWN_MS);
     later(() => {
       setStatus('Battery empty · signing out …', { warn: true });
@@ -994,9 +1045,11 @@
         link.classList.add('locked');
         link.setAttribute('aria-disabled', 'true');
       });
-      svg.querySelectorAll('.led').forEach(ledOff);
-      svg.style.transition = `opacity ${phase('fadeOut') / 2}ms, filter ${phase('fadeOut') / 2}ms`;
-      svg.classList.add('powered-off');
+      live.querySelectorAll('.led').forEach(ledOff);
+      for (const node of [svg, live]) {
+        node.style.transition = `opacity ${phase('fadeOut') / 2}ms, filter ${phase('fadeOut') / 2}ms`;
+        node.classList.add('powered-off');
+      }
     }, SHUTDOWN_MS + phase('powerDown'));
     later(() => {
       document.body.style.transition = `opacity ${phase('fadeOut')}ms ease-in`;
@@ -1009,7 +1062,7 @@
   // plug slides back, the rack regains its colour, the LEDs come back one by one as the
   // machines boot, fans spin up, the batteries recharge and traffic resumes
   function replug() {
-    const { timers, frame, charge, svg, leds } = shutdown;
+    const { timers, frame, charge, svg, live, leds } = shutdown;
     timers.forEach(clearTimeout);
     cancelAnimationFrame(frame);
     shutdown = null;
@@ -1019,8 +1072,10 @@
 
     document.body.style.transition = `opacity ${RESTORE_FADE_MS}ms`;
     document.body.style.opacity = '';
-    svg.style.transition = `opacity ${RESTORE_FADE_MS}ms, filter ${RESTORE_FADE_MS}ms`;
-    svg.classList.remove('powered-off');
+    for (const node of [svg, live]) {
+      node.style.transition = `opacity ${RESTORE_FADE_MS}ms, filter ${RESTORE_FADE_MS}ms`;
+      node.classList.remove('powered-off');
+    }
     const plugLink = svg.querySelector('.plug-link');
     plugLink.classList.remove('pulled');
     plugLink.setAttribute('aria-label', 'Pull the plug to sign out');
@@ -1037,14 +1092,14 @@
       booting.push({ timer: setTimeout(fn, rand(BOOT_MS * 0.15, BOOT_MS)), fn });
     }
     // Only fans that had already stopped spin up; the others never lost power
-    svg.querySelectorAll('.fan').forEach((fan) => {
+    live.querySelectorAll('.fan').forEach((fan) => {
       if (fan.style.animationName === 'none') spinUp(fan);
     });
     chargeBatteries(svg, charge);
     setStatus('Power restored · booting …');
     setTimeout(() => {
       if (poweredOff) return;
-      if (!traffic) startTraffic(svg, lastRoutes);
+      if (!traffic) startTraffic(live, lastRoutes);
       updateStatus();
     }, BOOT_MS);
   }
