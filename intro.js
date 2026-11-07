@@ -26,6 +26,7 @@
     flush = () => {
       for (; index < parts.length; index++, pos = 0) parts[index].node.textContent += parts[index].text.slice(pos);
       parts.at(-1).node.after(caret);
+      follow();
     };
     const step = () => {
       while (index < parts.length && pos >= parts[index].text.length) {
@@ -37,9 +38,15 @@
       const ch = part.text[pos++];
       part.node.textContent += ch;
       part.node.after(caret);
+      follow();
       timer = setTimeout(step, pace(ch));
     };
     step();
+  }
+
+  // A single line that has grown too long scrolls left, so the end and the caret stay in view
+  function follow() {
+    if (root.scrollWidth > root.clientWidth) root.scrollLeft = root.scrollWidth;
   }
 
   function line(node) {
@@ -70,7 +77,11 @@
     const count = document.createTextNode('');
     countdownTarget = event.detail.target || root;
     countdownTarget.replaceChildren(line(head), line(count));
-    if (countdownTarget === root) root.setAttribute('aria-label', 'Shutting down');
+    if (countdownTarget === root) {
+      root.setAttribute('aria-label', 'Shutting down');
+      // Above the racks the countdown stays on one line, so nothing below moves
+      root.classList.add('one-line');
+    }
     const number = (n) => (n ? `${n}... ` : '0');
     if (!animate) {
       head.textContent = 'Shutting down ';
@@ -81,9 +92,17 @@
     // One number per second; 0 arrives when the UPS shuts the services down
     type([{ node: head, text: 'Shutting down ' }, { node: count, text: number(seconds) }], () => 25);
     countdown = [];
-    for (let n = seconds - 1; n >= 0; n--) {
+    for (let n = seconds - 1; n > 0; n--) {
       countdown.push(setTimeout(() => type([{ node: count, text: number(n) }], () => 40), (seconds - n) * 1000));
     }
+    // At 0 the services go down and take the session with them, like ssh says goodbye
+    const target = countdownTarget;
+    countdown.push(setTimeout(() => {
+      const bye = document.createTextNode('');
+      target.append(line(bye));
+      const host = location.hostname;
+      type([{ node: count, text: number(0) }, { node: bye, text: host ? ` Connection to ${host} closed.` : ' Connection closed.' }], () => 30);
+    }, seconds * 1000));
   });
 
   // Plugged back in before the logout: report the reboot right behind the countdown for as
@@ -99,6 +118,7 @@
     target.append(line(tail));
     if (target === root) root.setAttribute('aria-label', 'Power restored, rebooting');
     const greet = () => {
+      root.classList.remove('one-line');
       if (target !== root) target.remove();
       countdownTarget = null;
       root.replaceChildren(...greeting.map((node) => node.cloneNode(true)));
@@ -106,7 +126,8 @@
       if (animate) typeGreeting(300);
     };
     countdown = [setTimeout(greet, event.detail.ms + 500)];
-    const text = 'Power restored... rebooting...';
+    // The leading space keeps it apart from a countdown that ended at "0" on the same line
+    const text = ' Power restored... rebooting...';
     if (!animate) {
       tail.textContent = text;
       return;
@@ -116,7 +137,8 @@
   });
 
   if (!animate) return;
-  // Keep the full height so nothing below jumps while the text grows
+  // Keep the full height, caret included, so nothing below jumps while the text grows
+  root.append(caret);
   root.style.minHeight = root.offsetHeight + 'px';
   typeGreeting(500);
 })();

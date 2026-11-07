@@ -51,8 +51,6 @@
   let model = JSON.parse(document.getElementById('model').textContent);
   let narrow = null;
   let layout = null;
-  // Must match the media query in style.css that moves the greeting beside the racks
-  const sideLayout = matchMedia('(min-width: 1400px)');
   let traffic = null;
   let sessionLost = false;
   let poweredOff = false;
@@ -769,13 +767,12 @@
   }
 
   // Stacked racks on small screens. Otherwise the racks get at least 75 % of the page width
-  // (exactly that when the greeting sits beside them) and at most 1500 px, and as many
-  // modules per row as it takes to fit the window height.
+  // and at most 1500 px, and as many modules per row as it takes to fit the window height.
   function chooseLayout(racks) {
     const pageW = document.documentElement.clientWidth;
     if (pageW < 752) return { narrow: true, geo: geometry(racks, 2, true), width: null };
     const minW = Math.min(pageW * 0.75, 1500);
-    const maxW = sideLayout.matches ? minW : Math.min(1500, pageW - 32);
+    const maxW = Math.min(1500, pageW - 32);
     const availH = innerHeight - (host.getBoundingClientRect().top + scrollY) - 16;
     let best = null;
     for (const cols of [3, 4, 5]) {
@@ -1141,7 +1138,6 @@
     else if (!choice.narrow) host.firstChild.style.width = Math.round(choice.width) + 'px';
   }
   addEventListener('resize', resize);
-  sideLayout.addEventListener('change', resize);
   motion.addEventListener('change', render);
   host.addEventListener('click', (event) => {
     if (event.target.closest('.plug-link')) onLogoutClick(event);
