@@ -387,6 +387,7 @@
 
   function drawChassis(g, box, stack, cols, ctx) {
     const { x, y, w } = box;
+    const slot = ctx.chassis++;
     el(g, 'text', { x, y: y + 12, class: 'stack-name' }, fit(stack.name, w - 60, 10));
     led(g, x + w - 28, y + 8, stackLed(stack.modules), 3);
 
@@ -410,12 +411,12 @@
       ctx.routes.push({ path, from: [acts[a]], to: [acts[b]] });
     }
 
+    // Every chassis is on the network; one whose containers nobody reaches from outside
+    // (no proxy network, no link) sees only quiet traffic on its cable
     const uplinked = stack.modules.map((m, i) => (m.proxy || m.href ? acts[i] : null)).filter(Boolean);
-    if (uplinked.length) {
-      const px = x + w - 14;
-      el(g, 'rect', { x: px, y: y + 4, width: 10, height: 8, rx: 1, class: 'port' });
-      ctx.nics.push({ x: px + 5, y: y + 8, leds: uplinked });
-    }
+    const px = x + w - 14;
+    el(g, 'rect', { x: px, y: y + 4, width: 10, height: 8, rx: 1, class: 'port' });
+    ctx.nics.push({ x: px + 5, y: y + 8, leds: uplinked.length ? uplinked : acts, slot, quiet: !uplinked.length });
   }
 
   function drawShelf(g, box, devices, cols) {
@@ -442,7 +443,7 @@
     const g = el(svg, 'g', { class: 'rack-unit' });
     const units = sum(plan);
     drawFrame(g, x0, y0, w, units);
-    const ctx = { routes: [], nics: [], ports: [], uplink: null, headLed: null, ups: null };
+    const ctx = { routes: [], nics: [], ports: [], uplink: null, headLed: null, ups: null, chassis: 0 };
     let y = y0 + CAP;
     for (const unit of plan) {
       const h = unit.u * U;
@@ -539,8 +540,8 @@
 
   // One cable from each chassis NIC through the channel to its own switch port. Lower NICs
   // run further out in the channel and higher in the lane below the switch, so no cable crosses another.
-  // The colours take turns within a rack, starting one further on in each rack.
-  function drawCables(layer, ctx, index) {
+  // The colour follows the chassis slot from the top: yellow, red, green, blue, then again.
+  function drawCables(layer, ctx) {
     if (!ctx.uplink || !ctx.nics.length) return;
     const cx = ctx.channelX;
     const n = ctx.nics.length;
@@ -553,9 +554,9 @@
       const port = ctx.ports[Math.min(i, ctx.ports.length - 1)];
       const x = cx - ((n - 1) * step) / 2 + i * step;
       const y = ctx.laneY + 4 + (n - 1 - i) * lane;
-      const path = drawPatchCable(layer, [[nic.x, nic.y], [x, nic.y], [x, y], [port.x, y], [port.x, port.y]], PATCH_COLORS[(index + i) % PATCH_COLORS.length]);
+      const path = drawPatchCable(layer, [[nic.x, nic.y], [x, nic.y], [x, y], [port.x, y], [port.x, port.y]], PATCH_COLORS[nic.slot % PATCH_COLORS.length]);
       linkUp(port);
-      ctx.routes.push({ path, from: nic.leds, to: [port.act] });
+      ctx.routes.push({ path, from: nic.leds, to: [port.act], quiet: nic.quiet });
     });
   }
 
@@ -668,7 +669,8 @@
     if (!motion.matches || !routes.length) return;
     for (const r of routes) r.length = r.path.getTotalLength();
     const layer = el(svg, 'g', { class: 'packets' });
-    const copper = routes.filter((r) => !r.fiber);
+    // Busy routes come up three times as often as quiet ones
+    const copper = routes.filter((r) => !r.fiber).flatMap((r) => (r.quiet ? [r] : [r, r, r]));
     // Fibre: a dense, fast stream of light pulses in each direction at once
     const streams = routes.filter((r) => r.fiber).flatMap((route) => [true, false].map((forward) => ({ route, forward, next: 0 })));
     const active = [];
@@ -777,8 +779,8 @@
     });
     const cables = el(svg, 'g', { class: 'cables' });
     const routes = [];
-    for (const [i, ctx] of contexts.entries()) {
-      drawCables(cables, ctx, i);
+    for (const ctx of contexts) {
+      drawCables(cables, ctx);
       routes.push(...ctx.routes);
     }
     for (let i = 1; i < contexts.length; i++) drawInterRack(cables, contexts[i - 1], contexts[i], routes);
