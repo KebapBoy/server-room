@@ -10,11 +10,11 @@
 </head>
 <body>
 <main>
-  <header class="top">
-    <h1><?= h(BASE_DOMAIN) ?></h1>
-    <p>Angemeldet als <?= h($displayName) ?> · <a id="logout" href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Abmelden</a></p>
+<?php $welcome = 'Welcome to ' . BASE_DOMAIN . ($firstName !== '' ? ', ' . $firstName : '') . '!'; ?>
+  <header class="intro">
+    <h1 id="intro" lang="en" aria-label="Hello World! <?= h($welcome) ?>"><span class="line">Hello World! </span><span class="line">Welcome to <b><?= h(BASE_DOMAIN) ?></b><?= $firstName !== '' ? ', </span><span class="line">' . h($firstName) : '' ?>!</span></h1>
   </header>
-  <div id="rack" class="rack"></div>
+  <div id="rack" class="rack" data-logout="https://auth.<?= h(BASE_DOMAIN) ?>/logout"></div>
   <noscript>
     <ul class="fallback">
 <?php foreach (link_tiles($model) as $tile): ?>
@@ -25,10 +25,13 @@
       </a></li>
 <?php endforeach; ?>
     </ul>
+    <p class="logout"><a href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Abmelden</a></p>
   </noscript>
   <p id="status" class="status"></p>
 </main>
 <script type="application/json" id="model"><?= $modelJson ?></script>
+<script>
+<?= file_get_contents(__DIR__ . '/intro.js') ?></script>
 <script>
 <?= file_get_contents(__DIR__ . '/rack.js') ?></script>
 </body>

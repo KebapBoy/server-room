@@ -266,6 +266,7 @@ function build_model(array $visible, array $snapshot, bool $isAdmin): array
 
 $groups = array_filter(array_map('trim', explode(',', $_SERVER['REMOTE_GROUPS'] ?? '')));
 $displayName = ($_SERVER['REMOTE_NAME'] ?? '') ?: ($_SERVER['REMOTE_USER'] ?? '');
+$firstName = strtok($displayName, ' ') ?: '';
 $services = read_services();
 $cookie = session_cookie();
 

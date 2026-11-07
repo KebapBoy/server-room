@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-11-07
+
+### Added
+
+- A typed "Hello World" greeting with the user's first name (`intro.js`).
+
+### Removed
+
+- The header with the sign-out link; signing out works through the plug only (the `<noscript>` view keeps a link).
+
 ## [0.11.0] - 2026-11-07
 
 ### Changed

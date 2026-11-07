@@ -15,12 +15,24 @@ body { margin: 0; background: var(--bg); color: var(--line); font: 15px/1.4 syst
 main { padding: 1.5rem 1rem 1rem; }
 a { color: var(--accent); }
 
-.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1rem; margin-bottom: 1rem; }
-h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
-.top p { margin: 0; color: var(--muted); font-size: .9rem; }
+/* Greeting: one line above the racks, beside them on wide screens (see below) */
+.intro { margin-bottom: 1rem; }
+h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
+h1 b { color: var(--accent); }
+.caret { display: inline-block; width: .55em; height: 1.1em; margin-left: 1px; vertical-align: text-bottom; background: currentColor; animation: caret 1s steps(1, end) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+/* The racks take the middle 75 % (rack.js), so the greeting fits into the left margin */
+@media (min-width: 1400px) {
+  .intro { position: absolute; top: 3.5rem; left: 1rem; width: calc(12.5vw - 2rem); margin: 0; }
+  h1 { font-size: 1.2rem; }
+  h1 .line { display: block; }
+  main .fallback, main .logout { max-width: min(1500px, 75vw); }
+}
 /* The visible status lives on the rack displays; this copy is for screen readers */
 .status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
+/* Without JS there is no plug, so the logout link sits below the tiles on the right */
+.logout { max-width: 1500px; margin: 1.5rem auto 0; text-align: right; font: .9rem var(--mono); }
 .fallback { list-style: none; max-width: 1500px; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; }
 
 /* <noscript> tiles drawn like the rack modules */
@@ -122,5 +134,5 @@ h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .blink, .fan { animation: none; }
+  .blink, .fan, .caret { animation: none; }
 }

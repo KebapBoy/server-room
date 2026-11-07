@@ -8,6 +8,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 - Updates every 15 s without reloading.
 - Admins see every stack and container; everyone else only the containers of their own services. The filter runs on the server.
 - Sign out by pulling the power plug of the rack, with a little shutdown animation (see below).
+- Greets the user by first name, typed like on a typewriter.
 - Works without JavaScript as a list of tiles.
 - Follows light and dark mode and "reduce motion".
 
@@ -141,9 +142,9 @@ The first matching rule wins:
 
 ### Signing out
 
-All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it (so does the sign-out link in the header). The UPS units switch from mains to battery and keep everything running until the battery is empty; then traffic stops, LEDs go out, fans coast down and the rack greys out before the page goes to Authelia's logout. All of this takes `SHUTDOWN_MS`.
+All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it. The UPS units switch from mains to battery and keep everything running until the battery is empty; then traffic stops, LEDs go out, fans coast down and the rack greys out before the page goes to Authelia's logout. All of this takes `SHUTDOWN_MS`.
 
-Without JavaScript or with "reduce motion" the plug is a plain link to the logout.
+Without JavaScript or with "reduce motion" the plug is a plain link to the logout. Without JavaScript a sign-out link sits below the tiles.
 
 ## Development
 
@@ -168,6 +169,7 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
 | `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |
+| `intro.js` | Types the greeting |
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 

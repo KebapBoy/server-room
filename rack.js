@@ -33,7 +33,7 @@
 
   const host = document.getElementById('rack');
   const statusEl = document.getElementById('status');
-  const logoutLink = document.getElementById('logout');
+  const logoutUrl = host.dataset.logout;
   // /?dry plays the unplug animation without logging out
   const dryRun = new URLSearchParams(location.search).has('dry');
   const motion = matchMedia('(prefers-reduced-motion: no-preference)');
@@ -466,7 +466,7 @@
     el(layer, 'path', { d: `M${wallX} ${sy - 30}V${sy + FLOOR_H / 2 - 1}`, class: 'rail' });
     for (let hy = sy - 28; hy < sy + FLOOR_H / 2 - 6; hy += 6) el(layer, 'path', { d: `M${wallX} ${hy}l5 5`, class: 'vent' });
 
-    const a = el(layer, 'a', { href: logoutLink.href, class: 'plug-link', 'aria-label': 'Stecker ziehen und abmelden' });
+    const a = el(layer, 'a', { href: logoutUrl, class: 'plug-link', 'aria-label': 'Stecker ziehen und abmelden' });
     el(a, 'title', {}, 'Stecker ziehen · abmelden');
     el(a, 'rect', { x: bodyLeft - 20, y: sy - 24, width: wallX - bodyLeft + 20, height: 36, class: 'hit' });
     el(a, 'text', { x: wallX - 8, y: sy - 13, 'text-anchor': 'end', class: 'small' }, 'ABMELDEN');
@@ -682,7 +682,7 @@
 
   function logout() {
     if (dryRun) location.reload();
-    else location.assign(logoutLink.href);
+    else location.assign(logoutUrl);
   }
 
   // Plug out: the UPSs keep everything running on battery until it is empty,
@@ -756,7 +756,6 @@
   addEventListener('resize', resize);
   sideLayout.addEventListener('change', resize);
   motion.addEventListener('change', render);
-  logoutLink.addEventListener('click', onLogoutClick);
   host.addEventListener('click', (event) => {
     if (event.target.closest('.plug-link')) onLogoutClick(event);
   });
