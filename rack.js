@@ -11,7 +11,7 @@
   const CHANNEL = 22;         // cable channel right of each rack
   const MODULE_H = 40;
   const ROW_GAP = 12;         // room below a module row for the backplane bus
-  const CHASSIS_HEAD = 20;
+  const CHASSIS_HEAD = 16;
   const COL_GAP = 8;
   const MIN_UNITS = 14;
   const POLL_MS = 15000;
@@ -108,7 +108,8 @@
 
   function gridUnits(count, cols) {
     const rows = Math.max(1, Math.ceil(count / cols));
-    return Math.ceil((CHASSIS_HEAD + rows * (MODULE_H + ROW_GAP) + 2) / U);
+    // The last row only needs half a gap below it for its backplane bus
+    return Math.ceil((CHASSIS_HEAD + rows * (MODULE_H + ROW_GAP) - ROW_GAP / 2 + 2) / U);
   }
 
   function planRack(rack, index, cols, devices) {
@@ -327,8 +328,8 @@
 
   function drawChassis(g, box, stack, cols, ctx) {
     const { x, y, w } = box;
-    el(g, 'text', { x, y: y + 14, class: 'stack-name' }, fit(stack.name, w - 60, 10));
-    led(g, x + w - 28, y + 10, stackLed(stack.modules), 3);
+    el(g, 'text', { x, y: y + 12, class: 'stack-name' }, fit(stack.name, w - 60, 10));
+    led(g, x + w - 28, y + 8, stackLed(stack.modules), 3);
 
     const { cells, laneX } = moduleGrid(box, stack.modules.length, cols);
     const traces = el(g, 'g', { class: 'traces' });
@@ -353,8 +354,8 @@
     const uplinked = stack.modules.map((m, i) => (m.proxy || m.href ? acts[i] : null)).filter(Boolean);
     if (uplinked.length) {
       const px = x + w - 14;
-      el(g, 'rect', { x: px, y: y + 6, width: 10, height: 8, rx: 1, class: 'port' });
-      ctx.nics.push({ x: px + 10, y: y + 10, leds: uplinked });
+      el(g, 'rect', { x: px, y: y + 4, width: 10, height: 8, rx: 1, class: 'port' });
+      ctx.nics.push({ x: px + 10, y: y + 8, leds: uplinked });
     }
   }
 
