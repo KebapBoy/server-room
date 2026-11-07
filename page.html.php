@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?= h(BASE_DOMAIN) ?></title>
+<link rel="icon" href="/favicon.ico">
+<style>
+<?= file_get_contents(__DIR__ . '/style.css') ?></style>
+</head>
+<body>
+<main>
+  <header>
+    <h1><?= h(BASE_DOMAIN) ?></h1>
+    <p>Angemeldet als <?= h($displayName) ?> · <a href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Abmelden</a></p>
+  </header>
+<?php if ($visible): ?>
+  <ul>
+<?php foreach ($visible as $s): ?>
+    <li><a href="https://<?= h($s['host']) ?>/"><strong><?= h(str_replace('-', ' ', $s['name'])) ?></strong><span><?= h($s['host']) ?></span></a></li>
+<?php endforeach; ?>
+  </ul>
+<?php else: ?>
+  <p>Für dieses Konto sind keine Dienste freigegeben.</p>
+<?php endif; ?>
+</main>
+</body>
+</html>
