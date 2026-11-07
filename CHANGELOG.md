@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-11-07
+
+### Added
+
+- A typed countdown "Shutting down 10... 9... … 0" in real seconds.
+
+### Changed
+
+- `SHUTDOWN_MS` is the time until everything is off; at 0 the rack greys out and the page fades out before the logout.
+
 ## [0.13.0] - 2026-11-07
 
 ### Changed

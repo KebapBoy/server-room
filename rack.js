@@ -20,14 +20,13 @@
   const NEW_TAB = { target: '_blank', rel: 'noopener' };  // service links always open a new tab
   const TOP = 26;             // room above the racks for the inter-rack cable
   const FLOOR_H = 44;         // room below the racks for the power strip
-  const SHUTDOWN_MS = 10000;  // unplug animation before the logout redirect; all phases scale with it
-  // Shutdown phases as fractions of SHUTDOWN_MS
+  const SHUTDOWN_MS = 10000;  // from pulling the plug until everything is off (the countdown hits 0)
+  // Shutdown phases as fractions of SHUTDOWN_MS; all of them scale with it
   const PHASES = {
-    drain: 0.65,              // UPSs run on battery until it is empty
-    ledsOff: 0.15,            // LEDs die one by one after that
-    fans: 0.25,               // fans coast to a stop
-    dimAt: 0.85,              // the rack starts to grey out
-    dim: 0.12,                // duration of the grey-out
+    drain: 0.9,               // UPSs run on battery until it is empty (countdown at 1)
+    ledsOff: 0.1,             // LEDs die one by one after that, all dark at 0
+    fans: 0.1,                // fans coast to a stop by 0
+    fadeOut: 0.15,            // at 0 the rack greys out and the page fades out, then logout
   };
   const phase = (name) => SHUTDOWN_MS * PHASES[name];
 
@@ -695,6 +694,7 @@
       return;
     }
     setStatus('Plug pulled · on battery', { warn: true });
+    document.dispatchEvent(new CustomEvent('shutdown', { detail: { ms: SHUTDOWN_MS } }));
     svg.querySelector('.plug-link').classList.add('pulled');
     svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
     svg.querySelectorAll('.ups-on-battery').forEach((node) => {
@@ -710,10 +710,13 @@
       svg.querySelectorAll('.fan').forEach(spinDown);
     });
     setTimeout(() => {
-      svg.style.transition = `opacity ${phase('dim')}ms, filter ${phase('dim')}ms`;
+      const fade = phase('fadeOut');
+      svg.style.transition = `opacity ${fade / 2}ms, filter ${fade / 2}ms`;
       svg.classList.add('powered-off');
-    }, phase('dimAt'));
-    setTimeout(logout, SHUTDOWN_MS);
+      document.body.style.transition = `opacity ${fade}ms ease-in`;
+      document.body.style.opacity = '0';
+    }, SHUTDOWN_MS);
+    setTimeout(logout, SHUTDOWN_MS + phase('fadeOut') + 100);
   }
 
   function onLogoutClick(event) {
