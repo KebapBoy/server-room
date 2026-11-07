@@ -81,15 +81,8 @@
     return str.length > max ? str.slice(0, Math.max(1, max - 1)) + '…' : str;
   }
 
-  function ledClass(state, health) {
-    if (state === 'running') return health === 'unhealthy' || health === 'starting' ? 'warn' : 'ok';
-    if (['created', 'paused', 'restarting'].includes(state)) return 'warn';
-    if (['exited', 'dead', 'removing'].includes(state)) return 'bad';
-    return 'off';
-  }
-
   function stackLed(modules) {
-    const classes = modules.map((m) => ledClass(m.state, m.health));
+    const classes = modules.map((m) => m.led);
     if (classes.every((c) => c === 'ok')) return 'ok';
     if (classes.every((c) => c === 'bad')) return 'bad';
     return 'warn';
@@ -297,7 +290,7 @@
     const box = el(parent, 'g', { class: 'module' });
     el(box, 'title', {}, `${m.title} · ${stateText(m)}`);
     el(box, 'rect', { x, y, width: w, height: h, rx: 2.5, class: 'module-body' });
-    led(box, x + 8, y + 9, ledClass(m.state, m.health));
+    led(box, x + 8, y + 9, m.led);
     const act = led(box, x + 16, y + 9, m.state === 'running' ? 'act' : 'off');
     if (m.state === 'running') blink(act, 0.7, 3.2);
     for (let i = 0; i < 4; i++) el(box, 'path', { d: `M${x + w - 8 - i * 4} ${y + 5}v8`, class: 'vent' });

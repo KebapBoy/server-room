@@ -170,6 +170,18 @@ function locate_service(array $service, array $environments): array
     return $found ? ['container', ...$found] : ['device'];
 }
 
+// Status LED colour of a container: ok, warn, bad or off
+function led_class(?string $state, ?string $health): string
+{
+    if ($state === 'running') {
+        return in_array($health, ['unhealthy', 'starting'], true) ? 'warn' : 'ok';
+    }
+    if (in_array($state, ['created', 'paused', 'restarting'], true)) {
+        return 'warn';
+    }
+    return in_array($state, ['exited', 'dead', 'removing'], true) ? 'bad' : 'off';
+}
+
 // Builds the rack model; non-admins only get the containers of their visible services
 function build_model(array $visible, array $snapshot, bool $isAdmin): array
 {
@@ -208,6 +220,7 @@ function build_model(array $visible, array $snapshot, bool $isAdmin): array
                     'title' => $isAdmin ? $container['name'] : $link['label'],
                     'state' => $container['state'],
                     'health' => $container['health'],
+                    'led' => led_class($container['state'], $container['health']),
                     'href' => $link['href'] ?? null,
                     'proxy' => in_array('proxy', $container['networks'], true),
                 ];
@@ -278,6 +291,30 @@ if (($_GET['data'] ?? null) === '1') {
 function h(string $text): string
 {
     return htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
+
+// Every clickable entry of the rack as a flat list for the <noscript> tiles
+function link_tiles(array $model): array
+{
+    $tiles = [];
+    foreach ($model['racks'] as $rack) {
+        foreach ($rack['links'] as $link) {
+            $tiles[] = $link + ['state' => null, 'led' => 'off'];
+        }
+        foreach ($rack['stacks'] as $stack) {
+            foreach ($stack['modules'] as $module) {
+                if ($module['href'] !== null) {
+                    $tiles[] = $module;
+                }
+            }
+        }
+    }
+    foreach ($model['devices'] as $device) {
+        $tiles[] = $device + ['state' => null, 'led' => 'off'];
+    }
+    usort($tiles, fn($a, $b) => strcmp($a['label'], $b['label']));
+    return $tiles;
 }
 
 require __DIR__ . '/page.html.php';

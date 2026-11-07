@@ -17,8 +17,12 @@
   <div id="rack" class="rack"></div>
   <noscript>
     <ul class="fallback">
-<?php foreach ($visible as $s): ?>
-      <li><a href="https://<?= h($s['host']) ?>/"><?= h($s['name']) ?></a></li>
+<?php foreach (link_tiles($model) as $tile): ?>
+      <li><a class="tile" href="<?= h($tile['href']) ?>">
+        <span class="led <?= $tile['led'] ?>"></span><span class="led <?= $tile['state'] === 'running' ? 'act blink' : 'off' ?>"></span><span class="vents"></span>
+        <span class="tile-label"><?= h($tile['label']) ?></span>
+        <svg class="tile-arrow" viewBox="0 0 8 8" aria-hidden="true"><path d="M1 7l6 -6m-4 0h4v4"/></svg>
+      </a></li>
 <?php endforeach; ?>
     </ul>
   </noscript>

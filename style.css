@@ -21,8 +21,24 @@ h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
 .status { margin: .75rem 0 0; color: var(--muted); font: .8rem/1.4 var(--mono); }
 .status.warn::before { content: "● "; color: var(--warn); }
 
-.fallback { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: .5rem; }
-.fallback a { display: block; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: .3rem; text-decoration: none; font-family: var(--mono); }
+.fallback { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; }
+
+/* <noscript> tiles drawn like the rack modules */
+.tile {
+  display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 1.6rem .3rem;
+  padding: .45rem .55rem .4rem; border: 1.3px solid var(--line); border-radius: 3px;
+  background: var(--bg); color: var(--line); text-decoration: none; font: .78rem/1 var(--mono);
+}
+.tile .led { width: 6px; height: 6px; border-radius: 50%; border: .8px solid var(--muted); background: var(--bg); }
+.tile .led.ok { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 2px var(--ok); }
+.tile .led.warn { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 2px var(--warn); }
+.tile .led.bad { background: var(--bad); border-color: var(--bad); box-shadow: 0 0 2px var(--bad); }
+.tile .led.act { background: var(--act); border-color: var(--act); }
+.tile .vents { grid-column: 3 / 5; justify-self: end; width: 13px; height: 9px; background: repeating-linear-gradient(90deg, var(--muted) 0 1px, transparent 1px 4px); }
+.tile-label { grid-column: 1 / 4; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tile-arrow { width: 8px; height: 8px; fill: none; stroke: var(--line); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.tile:hover, .tile:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 .5px var(--accent); color: var(--accent); outline: none; }
+.tile:hover .tile-arrow, .tile:focus-visible .tile-arrow { stroke: var(--accent); }
 
 /* Rack drawing: outlines only, colour is reserved for LEDs and traffic */
 .rack svg { display: block; width: 100%; height: auto; margin: 0 auto; }

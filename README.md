@@ -8,7 +8,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 - Updates every 15 s without reloading.
 - Admins see every stack and container; everyone else only the containers of their own services. The filter runs on the server.
 - Sign out by pulling the power plug of the rack, with a little shutdown animation (see below).
-- Works without JavaScript as a plain link list.
+- Works without JavaScript as a list of tiles.
 - Follows light and dark mode and "reduce motion".
 
 ## Requirements

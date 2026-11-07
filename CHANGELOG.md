@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-07
+
+### Changed
+
+- The `<noscript>` link list is drawn as tiles that look like the rack's server modules.
+- The LED colour is computed once in PHP and sent in the model.
+
 ## [0.6.0] - 2026-11-07
 
 ### Added
