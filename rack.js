@@ -20,6 +20,7 @@
   const NEW_TAB = { target: '_blank', rel: 'noopener' };  // service links always open a new tab
   const TOP = 26;             // room above the racks for the inter-rack cable
   const FLOOR_H = 44;         // room below the racks for the power strip
+  const PLUG_DROP = 90;       // stacked racks: floor socket this far below the strip, room to pull the plug
   const SHUTDOWN_MS = 10000;  // from pulling the plug until everything is off (the countdown hits 0)
   // Shutdown phases as fractions of SHUTDOWN_MS; all of them scale with it
   const PHASES = {
@@ -411,7 +412,8 @@
       else drawBlank(ug, box, unit.variant);
       y += h;
     }
-    ctx.channelX = x0 + w + CHANNEL / 2;
+    // Stacked racks: no channel beside the rack, the cables run down the right rail
+    ctx.channelX = narrow ? x0 + w - 8 : x0 + w + CHANNEL / 2;
     ctx.top = y0;
     return ctx;
   }
@@ -440,33 +442,17 @@
     routes.push({ path, from: [a.uplink.led], to: [b.uplink.led] });
   }
 
-  // Every UPS feeds one power strip whose plug sits in the wall socket;
-  // the plug is the logout link. Returns the x of the wall.
-  function drawPower(layer, contexts, sy) {
-    const feeds = contexts.filter((ctx) => ctx.ups).map((ctx, i) => ({
-      ups: ctx.ups,
-      x: ctx.channelX + 7 + (narrow ? i * 4 : 0),
-    }));
-    for (const f of feeds) el(layer, 'path', { d: `M${f.ups.x} ${f.ups.y}H${f.x}V${sy - 5}`, class: 'cable' });
-
-    const left = Math.min(...feeds.map((f) => f.x)) - 30;
-    const right = Math.max(...feeds.map((f) => f.x)) + 14;
-    el(layer, 'rect', { x: left, y: sy - 5, width: right - left, height: 10, rx: 2, class: 'face' });
-    for (const f of feeds) el(layer, 'rect', { x: f.x - 3, y: sy - 2.5, width: 6, height: 5, rx: 1, class: 'port' });
-    el(layer, 'rect', { x: left + 5, y: sy - 3, width: 9, height: 6, rx: 1, class: 'port' });
-    led(layer, left + 19, sy, 'bad', 1.8).classList.add('strip-led');
-
-    const wallX = right + 72;
+  // Wall socket with the plug in it, drawn sideways: the wall at wallX, the cord coming
+  // from the left at height sy. The plug is the logout link, which is returned.
+  function drawPlug(parent, wallX, sy) {
     const bodyRight = wallX - 6;
     const bodyLeft = bodyRight - 24;
-    el(layer, 'path', { d: `M${right} ${sy}H${bodyLeft}`, class: 'cable' });
-    el(layer, 'path', { d: `M${wallX} ${sy - 30}V${sy + FLOOR_H / 2 - 1}`, class: 'rail' });
-    for (let hy = sy - 28; hy < sy + FLOOR_H / 2 - 6; hy += 6) el(layer, 'path', { d: `M${wallX} ${hy}l5 5`, class: 'vent' });
+    el(parent, 'path', { d: `M${wallX} ${sy - 30}V${sy + FLOOR_H / 2 - 1}`, class: 'rail' });
+    for (let hy = sy - 28; hy < sy + FLOOR_H / 2 - 6; hy += 6) el(parent, 'path', { d: `M${wallX} ${hy}l5 5`, class: 'vent' });
 
-    const a = el(layer, 'a', { href: logoutUrl, class: 'plug-link', 'aria-label': 'Pull the plug to sign out' });
+    const a = el(parent, 'a', { href: logoutUrl, class: 'plug-link', 'aria-label': 'Pull the plug to sign out' });
     el(a, 'title', {}, 'Pull the plug · sign out');
     el(a, 'rect', { x: bodyLeft - 20, y: sy - 24, width: wallX - bodyLeft + 20, height: 36, class: 'hit' });
-    el(a, 'text', { x: wallX - 8, y: sy - 13, 'text-anchor': 'end', class: 'small' }, 'SIGN OUT');
     const plug = el(a, 'g', { class: 'plug' });
     el(plug, 'path', { d: `M${bodyLeft - 24} ${sy}H${bodyLeft}`, class: 'cable' });
     el(plug, 'path', { d: `M${bodyRight} ${sy - 3.5}h5M${bodyRight} ${sy + 3.5}h5`, class: 'pin' });
@@ -474,7 +460,42 @@
     for (let i = 0; i < 3; i++) el(plug, 'path', { d: `M${bodyLeft + 5 + i * 3} ${sy - 4}v8`, class: 'vent' });
     // The socket plate is drawn last so it hides the pins while plugged in
     el(a, 'rect', { x: wallX - 6, y: sy - 11, width: 6, height: 22, rx: 1, class: 'face' });
-    return wallX;
+    return a;
+  }
+
+  // Every UPS feeds one power strip whose plug sits in a wall socket: to the right of
+  // the strip, or (stacked racks) turned by 90° into a floor socket below it, so nothing
+  // sticks out to the right of the racks. Returns the right edge of the drawing.
+  function drawPower(layer, contexts, sy) {
+    const feeds = contexts.filter((ctx) => ctx.ups).map((ctx, i) => ({
+      ups: ctx.ups,
+      x: narrow ? ctx.channelX - 2 + i * 3 : ctx.channelX + 7,
+    }));
+    for (const f of feeds) el(layer, 'path', { d: `M${f.ups.x} ${f.ups.y}H${f.x}V${sy - 5}`, class: 'cable' });
+
+    // Stacked racks: the strip ends flush with the rack frame
+    const right = narrow ? contexts[0].channelX + 8 : Math.max(...feeds.map((f) => f.x)) + 14;
+    const left = narrow ? right - 120 : Math.min(...feeds.map((f) => f.x)) - 30;
+    el(layer, 'rect', { x: left, y: sy - 5, width: right - left, height: 10, rx: 2, class: 'face' });
+    for (const f of feeds) el(layer, 'rect', { x: f.x - 3, y: sy - 2.5, width: 6, height: 5, rx: 1, class: 'port' });
+    el(layer, 'rect', { x: left + 5, y: sy - 3, width: 9, height: 6, rx: 1, class: 'port' });
+    led(layer, left + 19, sy, 'bad', 1.8).classList.add('strip-led');
+
+    if (narrow) {
+      // Rotating by 90° turns the cord side (left) into up and the wall into the floor at py
+      const px = right - 30;
+      const py = sy + PLUG_DROP;
+      el(layer, 'path', { d: `M${px} ${sy + 5}V${py - 30}`, class: 'cable' });
+      drawPlug(el(layer, 'g', { transform: `rotate(90 ${px} ${py})` }), px, py);
+      const label = el(layer, 'a', { href: logoutUrl, class: 'plug-link', 'aria-hidden': 'true', tabindex: '-1' });
+      el(label, 'text', { x: px - 14, y: py - 14, 'text-anchor': 'end', class: 'small' }, 'SIGN OUT');
+      return right + 1;
+    }
+    const wallX = right + 72;
+    el(layer, 'path', { d: `M${right} ${sy}H${wallX - 30}`, class: 'cable' });
+    const a = drawPlug(layer, wallX, sy);
+    el(a, 'text', { x: wallX - 8, y: sy - 13, 'text-anchor': 'end', class: 'small' }, 'SIGN OUT');
+    return wallX + 7;
   }
 
   // ---- pseudo traffic -----------------------------------------------------
@@ -544,8 +565,10 @@
     const rackH = CAP * 2 + units * U + 4;
     const n = racks.length;
     const floor = TOP + (isNarrow ? n * rackH + (n - 1) * gap : rackH);
-    const viewW = isNarrow ? w + 112 + (n - 1) * 4 : (n - 1) * (w + CHANNEL + gap) + w + 112;
-    return { cols, w, gap, plans, rackH, floor, height: floor + FLOOR_H, viewW };
+    // Must match the right edge drawPower() returns
+    const viewW = isNarrow ? w + 2 : (n - 1) * (w + CHANNEL + gap) + w + 112;
+    const height = floor + (isNarrow ? FLOOR_H / 2 + PLUG_DROP + 10 : FLOOR_H);
+    return { cols, w, gap, plans, rackH, floor, height, viewW };
   }
 
   // Stacked racks on small screens. Otherwise the racks get at least 75 % of the page width
@@ -594,9 +617,8 @@
       routes.push(...ctx.routes);
     }
     for (let i = 1; i < contexts.length; i++) drawInterRack(cables, contexts[i - 1], contexts[i], routes);
-    const wallX = drawPower(el(svg, 'g', { class: 'power' }), contexts, floor + FLOOR_H / 2);
+    const width = drawPower(el(svg, 'g', { class: 'power' }), contexts, floor + FLOOR_H / 2);
 
-    const width = wallX + 7;
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     if (narrow) svg.style.maxWidth = Math.round(width * 1.15) + 'px';
     else svg.style.width = Math.round(choice.width) + 'px';
@@ -694,7 +716,17 @@
       return;
     }
     setStatus('Plug pulled · on battery', { warn: true });
-    document.dispatchEvent(new CustomEvent('shutdown', { detail: { ms: SHUTDOWN_MS } }));
+    // Stacked racks: the greeting is scrolled away, so count down next to the plug instead
+    let target = null;
+    if (narrow) {
+      target = document.createElement('p');
+      target.className = 'shutdown-text';
+      // Pin the first line to the top of the power strip, so new lines grow downwards
+      const strip = svg.querySelector('.power .face').getBoundingClientRect();
+      target.style.top = Math.round(strip.top - host.getBoundingClientRect().top) + 'px';
+      host.append(target);
+    }
+    document.dispatchEvent(new CustomEvent('shutdown', { detail: { ms: SHUTDOWN_MS, target } }));
     svg.querySelector('.plug-link').classList.add('pulled');
     svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
     svg.querySelectorAll('.ups-on-battery').forEach((node) => {

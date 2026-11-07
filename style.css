@@ -53,6 +53,9 @@ h1 b { color: var(--accent); }
 .tile:hover .tile-arrow, .tile:focus-visible .tile-arrow { stroke: var(--accent); }
 
 /* Rack drawing: outlines only, colour is reserved for LEDs and traffic */
+/* Countdown below the stacked racks, left of the plug (rack.js) */
+.rack { position: relative; }
+.shutdown-text { position: absolute; left: 0; width: 55%; margin: 0; font: 600 1rem/1.5 var(--mono); }
 .rack svg { display: block; width: 100%; height: auto; margin: 0 auto; }
 .rack-svg { font-family: var(--mono); fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .rack-svg text { fill: var(--line); stroke: none; }

@@ -39,14 +39,16 @@
     return span;
   }
 
-  // rack.js dispatches this with the shutdown duration when the plug is pulled
+  // rack.js dispatches this with the shutdown duration when the plug is pulled, and
+  // optionally another element to count down in
   document.addEventListener('shutdown', (event) => {
     clearTimeout(timer);
     const seconds = Math.max(1, Math.round(event.detail.ms / 1000));
     const head = document.createTextNode('');
     const count = document.createTextNode('');
-    root.replaceChildren(line(head), line(count));
-    root.setAttribute('aria-label', 'Shutting down');
+    const target = event.detail.target || root;
+    target.replaceChildren(line(head), line(count));
+    if (target === root) root.setAttribute('aria-label', 'Shutting down');
     const number = (n) => (n ? `${n}... ` : '0');
     if (!animate) {
       head.textContent = 'Shutting down ';
