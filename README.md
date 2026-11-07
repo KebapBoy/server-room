@@ -139,7 +139,7 @@ The first matching rule wins:
 
 - Each rack has a head unit with a name plate, a status LED and the number of active modules; a small display next to it shows the age of the data and status messages.
 - The racks are centred and sized to the window, from 75 % of the width up to 1500 px; they stack on narrow screens.
-- Patch cables lead from the chassis to the switch, the racks are linked by fibre.
+- A 2U switch with numbered ports sits on top; containers that talk to the outside are plugged into it with patch cables.
 - Faceplates are brushed aluminium, the rack is light grey steel (anthracite in dark mode); colours are CSS variables (`--metal-*`, `--steel-*`) in `style.css`.
 - Service links open in a new tab.
 

@@ -1,13 +1,13 @@
 :root {
   color-scheme: light dark;
   --bg: #f3f4f1; --panel: #f9f9f6; --line: #2a3037; --muted: #7b838c; --faint: rgba(42, 48, 55, .22);
-  --accent: #1f6feb; --ok: #17a34a; --warn: #d4a106; --bad: #dc3d34; --act: #2f81f7;
+  --accent: #1f6feb; --ok: #17a34a; --warn: #d4a106; --bad: #dc3d34; --act: #2f81f7; --amber: #f08c00;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0e1115; --panel: #12161b; --line: #c4ccd5; --muted: #78818b; --faint: rgba(196, 204, 213, .2);
-    --accent: #58a6ff; --ok: #3fb950; --warn: #e3b341; --bad: #f85149; --act: #58a6ff;
+    --accent: #58a6ff; --ok: #3fb950; --warn: #e3b341; --bad: #f85149; --act: #58a6ff; --amber: #ffa11a;
   }
 }
 /* Rack materials: aluminium faceplates and drive sleds, a light grey (dark: anthracite)
@@ -153,6 +153,7 @@ h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
 .rack-svg .stack-name { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
 .rack-svg .label { font-size: 9.5px; }
 .rack-svg .small { font-size: 7px; letter-spacing: .08em; fill: var(--muted); }
+.rack-svg .port-num { font-size: 4.6px; letter-spacing: 0; }
 .rack-svg .unum { font-size: 6px; fill: var(--muted); }
 .rack-svg .pill-text { font-size: 8px; }
 
@@ -199,7 +200,9 @@ h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
 .led.warn { fill: var(--warn); stroke: var(--warn); filter: drop-shadow(0 0 1.5px var(--warn)); }
 .led.bad { fill: var(--bad); stroke: var(--bad); filter: drop-shadow(0 0 1.5px var(--bad)); }
 .led.act { fill: var(--act); stroke: var(--act); filter: drop-shadow(0 0 1.5px var(--act)); }
+.led.amber { fill: var(--amber); stroke: var(--amber); filter: drop-shadow(0 0 1.5px var(--amber)); }
 .led.flash { opacity: 1 !important; fill: var(--accent); stroke: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
+.led.amber.flash { fill: var(--amber); stroke: var(--amber); filter: drop-shadow(0 0 3px var(--amber)); }
 
 /* UPS battery gauge */
 .cell { fill: var(--faint); stroke: none; }

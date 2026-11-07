@@ -131,8 +131,7 @@
   function planRack(rack, index, cols, devices) {
     const plan = [
       { type: 'head', u: 2 },
-      { type: 'switch', u: 1 },
-      index % 2 ? { type: 'blank', u: 1, variant: 'vent' } : { type: 'patch', u: 1 },
+      { type: 'switch', u: 2 },
       { type: 'cable', u: 1 },
     ];
     for (const stack of rack.stacks) plan.push({ type: 'chassis', u: gridUnits(stack.modules.length, cols), stack });
@@ -232,39 +231,51 @@
     ctx.headLed = node;
   }
 
+  // 2U switch with numbered ports like the real ones: odd numbers in the upper row, even
+  // ones in the lower row. Numbers sit in the strip between the rows and each port's two
+  // LEDs (link green left, activity amber right) at its outer corners, so the cables
+  // hanging down from the lower row hide neither.
+  // Two SFP cages flush right.
   function drawSwitch(g, box, ctx) {
-    const { x, y, w } = box;
+    const { x, y, w, h } = box;
     el(g, 'text', { x, y: y + 14, class: 'small' }, 'SWITCH');
-    const port = (px, width) => {
-      el(g, 'rect', { x: px, y: y + 10, width, height: 7, rx: 1, class: 'port' });
-      const l = el(g, 'rect', { x: px + width / 2 - 1.5, y: y + 5, width: 3, height: 2, class: 'led off' });
-      return { x: px + width / 2, y: y + 13.5, led: l };
+    el(g, 'text', { x, y: y + 23, class: 'small port-num' }, '1G · 2× SFP');
+    const rows = [
+      { py: y + 7, ledY: y + 4, labelY: y + 21.5 },
+      { py: y + 28, ledY: y + 39.5, labelY: y + 26.5 },
+    ];
+    const port = (px, row, number) => {
+      const { py, ledY, labelY } = rows[row];
+      el(g, 'rect', { x: px, y: py, width: 12, height: 10, rx: 1.2, class: 'port' });
+      const link = el(g, 'rect', { x: px + 0.5, y: ledY, width: 3, height: 1.5, class: 'led off' });
+      const act = el(g, 'rect', { x: px + 8.5, y: ledY, width: 3, height: 1.5, class: 'led off' });
+      el(g, 'text', { x: px + 6, y: labelY, 'text-anchor': 'middle', class: 'small port-num' }, String(number));
+      return { x: px + 6, y: py + 5, link, act };
     };
-    // Two SFP cages flush right, set apart from the copper ports: the outer one takes the
-    // fibre to the neighbouring rack, the inner one stays free
-    const sfpX = x + w - 23;
+    // Set apart from the copper ports: the outer SFP takes the fibre to the neighbouring
+    // rack, the inner one stays free
+    const sfpX = x + w - 27;
     const start = x + 44;
-    const count = Math.min(24, Math.floor((sfpX - 6 - start + 3) / 12));
+    const cols = Math.min(12, Math.floor((sfpX - 6 - start + 4) / 16));
     ctx.ports = [];
-    for (let i = 0; i < count; i++) ctx.ports.push(port(start + i * 12, 9));
-    port(sfpX, 10);
-    el(g, 'path', { d: `M${sfpX + 2} ${y + 11.5}h6`, class: 'vent' });
-    ctx.uplink = port(sfpX + 13, 10);
-  }
-
-  // Lights a switch port's link LED once a cable is plugged in
-  function linkUp(port) {
-    port.led.setAttribute('class', 'led ok');
-    blink(port.led, 0.4, 2.5);
-  }
-
-  function drawPatch(g, box) {
-    const { x, y, w } = box;
-    el(g, 'text', { x, y: y + 14, class: 'small' }, 'PATCH');
-    for (let px = x + 44; px < x + w - 6; px += 12) {
-      el(g, 'circle', { cx: px + 4, cy: y + 11, r: 3.2, class: 'port' });
-      el(g, 'path', { d: `M${px + 2.5} ${y + 11}h3`, class: 'vent' });
+    for (let i = 0; i < cols; i++) {
+      port(start + i * 16, 0, 2 * i + 1);
+      ctx.ports.push(port(start + i * 16, 1, 2 * i + 2));
     }
+    el(g, 'text', { x: sfpX + 13.5, y: y + 14, 'text-anchor': 'middle', class: 'small port-num' }, 'SFP');
+    port(sfpX, 1, 2 * cols + 1);
+    el(g, 'path', { d: `M${sfpX + 3} ${rows[1].py + 2}h6`, class: 'vent' });
+    ctx.uplink = port(sfpX + 15, 1, 2 * cols + 2);
+    // Cables leave the switch downwards and run to the channel just below it
+    ctx.laneY = y + h + 3;
+  }
+
+  // A cable plugged in: the link LED lights steadily, the activity LED flickers (and
+  // flashes when a packet arrives)
+  function linkUp(port) {
+    port.link.setAttribute('class', 'led ok');
+    port.act.setAttribute('class', 'led amber');
+    blink(port.act, 0.4, 2.5);
   }
 
   function drawCableManager(g, box) {
@@ -441,7 +452,6 @@
       const box = { x: x0 + RAIL + 8, y, w: w - 2 * RAIL - 16, h };
       if (unit.type === 'head') drawHead(ug, box, rack, ctx);
       else if (unit.type === 'switch') drawSwitch(ug, box, ctx);
-      else if (unit.type === 'patch') drawPatch(ug, box);
       else if (unit.type === 'cable') drawCableManager(ug, box);
       else if (unit.type === 'chassis') drawChassis(ug, box, unit.stack, cols, ctx);
       else if (unit.type === 'shelf') drawShelf(ug, box, unit.devices, cols);
@@ -502,7 +512,7 @@
       const angle = (Math.atan2(next[1] - y, next[0] - x) * 180) / Math.PI - 90;
       const p = el(g, 'g', { transform: `rotate(${angle.toFixed(1)} ${x} ${y})` });
       if (fiber) drawLcPlug(p, x, y);
-      else el(p, 'rect', { x: x - 3.5, y: y - 3, width: 7, height: 6, rx: 1.2, class: 'patch-boot' });
+      else el(p, 'rect', { x: x - 4.5, y: y - 3.5, width: 9, height: 7.5, rx: 1.4, class: 'patch-boot' });
     }
     return core;
   }
@@ -536,14 +546,15 @@
     const bottom = Math.max(...ctx.nics.map((nic) => nic.y));
     el(layer, 'path', { d: `M${cx - 5} ${ctx.uplink.y - 6}V${bottom + 6}M${cx + 5} ${ctx.uplink.y - 6}V${bottom + 6}`, class: 'channel' });
     const step = n > 1 ? Math.min(1.6, 5 / (n - 1)) : 0;
-    const lane = Math.min(2.4, 14 / n);
+    const lane = Math.min(2.4, 13 / n);
+    // The lower row from port 2 on, as far as there are ports
     ctx.nics.forEach((nic, i) => {
-      const port = ctx.ports[Math.max(0, ctx.ports.length - n + i)];
+      const port = ctx.ports[Math.min(i, ctx.ports.length - 1)];
       const x = cx - ((n - 1) * step) / 2 + i * step;
-      const y = ctx.uplink.y + 15.5 + (n - 1 - i) * lane;
+      const y = ctx.laneY + 4 + (n - 1 - i) * lane;
       const path = drawPatchCable(layer, [[nic.x, nic.y], [x, nic.y], [x, y], [port.x, y], [port.x, port.y]], PATCH_COLORS[(index + i) % PATCH_COLORS.length]);
       linkUp(port);
-      ctx.routes.push({ path, from: nic.leds, to: [port.led] });
+      ctx.routes.push({ path, from: nic.leds, to: [port.act] });
     });
   }
 
@@ -553,14 +564,14 @@
     if (!a.uplink || !b.uplink) return;
     const ax = a.channelX + 4.5;
     const bx = b.channelX + 4.5;
-    const ay = a.uplink.y + FIBER_TAIL + 3;
-    const by = b.uplink.y + FIBER_TAIL + 3;
+    const ay = a.laneY;
+    const by = b.laneY;
     const via = b.top === a.top ? [[ax, a.top - 12], [bx, a.top - 12]] : [];
     const points = [[a.uplink.x, a.uplink.y], [a.uplink.x, ay], [ax, ay], ...via, [bx, by], [b.uplink.x, by], [b.uplink.x, b.uplink.y]];
     const path = drawPatchCable(layer, points, 'fiber');
     linkUp(a.uplink);
     linkUp(b.uplink);
-    routes.push({ path, from: [a.uplink.led], to: [b.uplink.led] });
+    routes.push({ path, from: [a.uplink.act], to: [b.uplink.act] });
   }
 
   // Wall socket with the plug in it, drawn sideways and PLUG_SCALE times larger around
