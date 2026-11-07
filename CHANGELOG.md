@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-11-07
+
+### Added
+
+- A two-line display in each rack head shows counts and status: data age, stale data, an expired session (click to reload) and the shutdown messages. The status line below the rack remains for screen readers only.
+
 ## [0.9.1] - 2026-11-07
 
 ### Changed

@@ -180,7 +180,6 @@
     const state = !rack.online ? 'bad' : model.stale ? 'warn' : 'ok';
     const node = led(g, lx, y + h / 2, state, 3.5);
     if (state !== 'ok') blink(node, 0.8, 1.4);
-    if (all.length) el(g, 'text', { x: x + plateW + 10, y: y + h / 2 + 3, class: 'count' }, `${running}/${all.length} AKTIV`);
 
     let right = x + w;
     for (const link of [...rack.links].reverse()) {
@@ -192,6 +191,15 @@
       el(a, 'text', { x: right + 6, y: y + h / 2 + 3, class: 'pill-text' }, label);
       right -= 6;
     }
+
+    // Two-line display: active containers, below it the status that updateStatus() writes
+    const lcdX = x + plateW + 8;
+    const lcdW = Math.min(180, right - 2 - lcdX);
+    const counts = !rack.online ? 'OFFLINE' : all.length ? `${running}/${all.length} AKTIV` : 'ONLINE';
+    const lcd = el(g, 'a', { class: 'lcd-link' });
+    el(lcd, 'rect', { x: lcdX, y: y + 7, width: lcdW, height: h - 14, rx: 2, class: 'lcd' });
+    el(lcd, 'text', { x: lcdX + 6, y: y + 19, class: 'lcd-text' }, fit(counts, lcdW - 12, 8));
+    el(lcd, 'text', { x: lcdX + 6, y: y + 31, class: 'lcd-text lcd-status', 'data-width': lcdW - 12 });
     ctx.headLed = node;
   }
 
@@ -557,25 +565,35 @@
     svg.style.maxWidth = Math.round(width * 1.15) + 'px';
     host.replaceChildren(svg);
     startTraffic(svg, routes);
+    updateStatus();
+  }
+
+  // Shows a status on every rack display and, for screen readers, in #status
+  function setStatus(text, { warn = false, href = null } = {}) {
+    statusEl.textContent = text;
+    for (const node of host.querySelectorAll('.lcd-status')) {
+      node.textContent = fit(text.toUpperCase(), Number(node.dataset.width), 8);
+    }
+    for (const link of host.querySelectorAll('.lcd-link')) {
+      link.classList.toggle('warn', warn);
+      if (href) link.setAttribute('href', href);
+      else link.removeAttribute('href');
+    }
   }
 
   function updateStatus() {
-    statusEl.classList.toggle('warn', model.stale || sessionLost);
+    if (poweredOff) return;
     if (sessionLost) {
-      statusEl.textContent = 'Sitzung abgelaufen · ';
-      const a = document.createElement('a');
-      a.href = '/';
-      a.textContent = 'neu anmelden';
-      statusEl.appendChild(a);
+      setStatus('Sitzung abgelaufen · neu anmelden', { warn: true, href: '/' });
       return;
     }
     if (!model.generated) {
-      statusEl.textContent = 'Keine Rack-Daten verfügbar';
+      setStatus('Keine Daten', { warn: true });
       return;
     }
     const age = Math.max(0, Math.round(Date.now() / 1000 - model.generated));
     const ago = age < 90 ? `${age} s` : age < 5400 ? `${Math.round(age / 60)} min` : `${Math.round(age / 3600)} h`;
-    statusEl.textContent = (model.stale ? 'Daten veraltet · ' : '') + `Stand vor ${ago}`;
+    setStatus((model.stale ? 'Veraltet · vor ' : 'Stand vor ') + ago, { warn: model.stale });
   }
 
   // ---- logout: pull the plug ----------------------------------------------
@@ -633,13 +651,12 @@
     if (poweredOff) return;
     const svg = host.querySelector('svg');
     poweredOff = true;
-    statusEl.classList.remove('warn');
     if (!motion.matches || !svg) {
-      statusEl.textContent = 'Stecker gezogen · Abmeldung …';
+      setStatus('Stecker gezogen · Abmeldung …');
       logout();
       return;
     }
-    statusEl.textContent = 'Stecker gezogen · USV läuft auf Akku …';
+    setStatus('Stecker gezogen · Akkubetrieb', { warn: true });
     svg.querySelector('.plug-link').classList.add('pulled');
     svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
     svg.querySelectorAll('.ups-on-battery').forEach((node) => {
@@ -648,7 +665,7 @@
     });
 
     drainBatteries(svg, () => {
-      statusEl.textContent = 'Akku leer · Abmeldung …';
+      setStatus('Akku leer · Abmeldung …', { warn: true });
       stopTraffic();
       const leds = [...svg.querySelectorAll('.led')].sort(() => Math.random() - 0.5);
       leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, phase('ledsOff'))));
