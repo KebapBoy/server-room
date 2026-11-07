@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-11-07
+
+### Added
+
+- Sign out by pulling the rack's power plug: the UPS drains, LEDs die, fans coast down and the rack dims before the redirect to Authelia's logout. Without JavaScript or with reduced motion the link leads straight to the logout.
+
 ## [0.2.1] - 2026-11-07
 
 ### Fixed

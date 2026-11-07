@@ -17,15 +17,19 @@
   const POLL_MS = 15000;
   const FONT_W = 0.6;         // monospace glyph width relative to font size
   const MAX_PACKETS = 24;
+  const FLOOR_H = 44;         // room below the racks for the power strip
+  const SHUTDOWN_MS = 1700;   // unplug animation before the logout redirect
 
   const host = document.getElementById('rack');
   const statusEl = document.getElementById('status');
+  const logoutLink = document.getElementById('logout');
   const motion = matchMedia('(prefers-reduced-motion: no-preference)');
 
   let model = JSON.parse(document.getElementById('model').textContent);
   let narrow = null;
   let traffic = null;
   let sessionLost = false;
+  let poweredOff = false;
 
   const STATE_TEXT = {
     running: 'läuft', created: 'erstellt', paused: 'pausiert', restarting: 'startet neu',
@@ -243,12 +247,13 @@
     }
   }
 
-  function drawUps(g, box) {
+  function drawUps(g, box, ctx) {
     const { x, y, w, h } = box;
     el(g, 'rect', { x, y: y + 8, width: 74, height: h - 16, rx: 2, class: 'port' });
     el(g, 'text', { x: x + 6, y: y + 20, class: 'small' }, 'USV');
-    el(g, 'text', { x: x + 6, y: y + 32, class: 'label' }, '100 %');
-    for (let i = 0; i < 3; i++) led(g, x + 88 + i * 9, y + 14, i < 2 ? 'ok' : 'off', 2.4);
+    el(g, 'text', { x: x + 6, y: y + 32, class: 'label ups-charge' }, '100 %');
+    for (let i = 0; i < 3; i++) led(g, x + 88 + i * 9, y + 14, i < 2 ? 'ok' : 'off', 2.4).classList.add('ups-led');
+    ctx.ups = { x: x + w, y: y + h - 5 };
     for (let vx = x + 84; vx < x + w - 50; vx += 7) {
       el(g, 'path', { d: `M${vx} ${y + 24}v${h - 32}`, class: 'vent' });
     }
@@ -359,7 +364,7 @@
     const g = el(svg, 'g', { class: 'rack-unit' });
     const units = sum(plan);
     drawFrame(g, x0, y0, w, units);
-    const ctx = { routes: [], nics: [], uplink: null, headLed: null };
+    const ctx = { routes: [], nics: [], uplink: null, headLed: null, ups: null };
     let y = y0 + CAP;
     for (const unit of plan) {
       const h = unit.u * U;
@@ -374,7 +379,7 @@
       else if (unit.type === 'cable') drawCableManager(ug, box);
       else if (unit.type === 'chassis') drawChassis(ug, box, unit.stack, cols, ctx);
       else if (unit.type === 'shelf') drawShelf(ug, box, unit.devices, cols);
-      else if (unit.type === 'ups') drawUps(ug, box);
+      else if (unit.type === 'ups') drawUps(ug, box, ctx);
       else drawBlank(ug, box, unit.variant);
       y += h;
     }
@@ -405,6 +410,43 @@
       : `M${a.uplink.x} ${a.uplink.y}H${a.channelX}V${b.uplink.y}H${b.uplink.x}`;
     const path = el(layer, 'path', { d, class: 'cable uplink' });
     routes.push({ path, from: [a.uplink.led], to: [b.uplink.led] });
+  }
+
+  // Every UPS feeds one power strip whose plug sits in the wall socket;
+  // the plug is the logout link. Returns the x of the wall.
+  function drawPower(layer, contexts, sy) {
+    const feeds = contexts.filter((ctx) => ctx.ups).map((ctx, i) => ({
+      ups: ctx.ups,
+      x: ctx.channelX + 7 + (narrow ? i * 4 : 0),
+    }));
+    for (const f of feeds) el(layer, 'path', { d: `M${f.ups.x} ${f.ups.y}H${f.x}V${sy - 5}`, class: 'cable' });
+
+    const left = Math.min(...feeds.map((f) => f.x)) - 30;
+    const right = Math.max(...feeds.map((f) => f.x)) + 14;
+    el(layer, 'rect', { x: left, y: sy - 5, width: right - left, height: 10, rx: 2, class: 'face' });
+    for (const f of feeds) el(layer, 'rect', { x: f.x - 3, y: sy - 2.5, width: 6, height: 5, rx: 1, class: 'port' });
+    el(layer, 'rect', { x: left + 5, y: sy - 3, width: 9, height: 6, rx: 1, class: 'port' });
+    led(layer, left + 19, sy, 'bad', 1.8).classList.add('strip-led');
+
+    const wallX = right + 72;
+    const bodyRight = wallX - 6;
+    const bodyLeft = bodyRight - 24;
+    el(layer, 'path', { d: `M${right} ${sy}H${bodyLeft}`, class: 'cable' });
+    el(layer, 'path', { d: `M${wallX} ${sy - 30}V${sy + FLOOR_H / 2 - 1}`, class: 'rail' });
+    for (let hy = sy - 28; hy < sy + FLOOR_H / 2 - 6; hy += 6) el(layer, 'path', { d: `M${wallX} ${hy}l5 5`, class: 'vent' });
+
+    const a = el(layer, 'a', { href: logoutLink.href, class: 'plug-link', 'aria-label': 'Stecker ziehen und abmelden' });
+    el(a, 'title', {}, 'Stecker ziehen · abmelden');
+    el(a, 'rect', { x: bodyLeft - 20, y: sy - 24, width: wallX - bodyLeft + 20, height: 36, class: 'hit' });
+    el(a, 'text', { x: wallX - 8, y: sy - 13, 'text-anchor': 'end', class: 'small' }, 'ABMELDEN');
+    const plug = el(a, 'g', { class: 'plug' });
+    el(plug, 'path', { d: `M${bodyLeft - 24} ${sy}H${bodyLeft}`, class: 'cable' });
+    el(plug, 'path', { d: `M${bodyRight} ${sy - 3.5}h5M${bodyRight} ${sy + 3.5}h5`, class: 'pin' });
+    el(plug, 'rect', { x: bodyLeft, y: sy - 7, width: 24, height: 14, rx: 3, class: 'plug-body' });
+    for (let i = 0; i < 3; i++) el(plug, 'path', { d: `M${bodyLeft + 5 + i * 3} ${sy - 4}v8`, class: 'vent' });
+    // The socket plate is drawn last so it hides the pins while plugged in
+    el(a, 'rect', { x: wallX - 6, y: sy - 11, width: 6, height: 22, rx: 1, class: 'face' });
+    return wallX;
   }
 
   // ---- pseudo traffic -----------------------------------------------------
@@ -461,6 +503,7 @@
   // ---- render, status, polling ------------------------------------------
 
   function render() {
+    if (poweredOff) return;
     stopTraffic();
     narrow = host.clientWidth < 720;
     const cols = narrow ? 2 : 3;
@@ -472,10 +515,10 @@
     const units = padPlans(plans, racks);
     const rackH = CAP * 2 + units * U + 4;
     const slotW = w + CHANNEL;
-    const width = narrow ? slotW + 2 : racks.length * slotW + (racks.length - 1) * gap + 2;
-    const height = narrow ? top + racks.length * rackH + (racks.length - 1) * gap : top + rackH;
+    const floor = narrow ? top + racks.length * rackH + (racks.length - 1) * gap : top + rackH;
+    const height = floor + FLOOR_H;
 
-    const svg = el(null, 'svg', { viewBox: `0 0 ${width} ${height}`, class: 'rack-svg', role: 'group', 'aria-label': 'Serverrack' });
+    const svg = el(null, 'svg', { class: 'rack-svg', role: 'group', 'aria-label': 'Serverrack' });
     const contexts = racks.map((rack, i) => {
       const x0 = 1 + (narrow ? 0 : i * (slotW + gap));
       const y0 = top + (narrow ? i * (rackH + gap) : 0);
@@ -488,7 +531,10 @@
       routes.push(...ctx.routes);
     }
     for (let i = 1; i < contexts.length; i++) drawInterRack(cables, contexts[i - 1], contexts[i], routes);
+    const wallX = drawPower(el(svg, 'g', { class: 'power' }), contexts, floor + FLOOR_H / 2);
 
+    const width = wallX + 7;
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.style.maxWidth = Math.round(width * 1.15) + 'px';
     host.replaceChildren(svg);
     startTraffic(svg, routes);
@@ -513,8 +559,71 @@
     statusEl.textContent = (model.stale ? 'Daten veraltet · ' : '') + `Stand vor ${ago}`;
   }
 
+  // ---- logout: pull the plug ----------------------------------------------
+
+  function ledOff(node) {
+    node.setAttribute('class', 'led');
+    node.style.animation = 'none';
+  }
+
+  // Lets each fan coast from its current angle to a stop
+  function spinDown(fan) {
+    const m = new DOMMatrixReadOnly(getComputedStyle(fan).transform);
+    const angle = (Math.atan2(m.b, m.a) * 180) / Math.PI;
+    fan.style.animation = 'none';
+    fan.style.transform = `rotate(${angle}deg)`;
+    fan.getBoundingClientRect();
+    fan.style.transition = 'transform 1.2s cubic-bezier(.3, .6, .6, 1)';
+    fan.style.transform = `rotate(${angle + 150}deg)`;
+  }
+
+  // Plug out, the UPS drains its battery, LEDs die one by one, fans coast down, then log out
+  function unplug() {
+    if (poweredOff) return;
+    const svg = host.querySelector('svg');
+    poweredOff = true;
+    statusEl.classList.remove('warn');
+    statusEl.textContent = 'Stecker gezogen · Abmeldung …';
+    if (!motion.matches || !svg) {
+      location.assign(logoutLink.href);
+      return;
+    }
+    stopTraffic();
+    svg.querySelector('.plug-link').classList.add('pulled');
+    svg.querySelectorAll('.strip-led').forEach(ledOff);
+
+    svg.querySelectorAll('.ups-led').forEach((node, i) => {
+      ledOff(node);
+      if (i % 3 === 0) {
+        node.setAttribute('class', 'led warn');
+        blink(node, 0.3, 0.5);
+      }
+    });
+    const charges = svg.querySelectorAll('.ups-charge');
+    let charge = 100;
+    const drain = setInterval(() => {
+      charge = Math.max(0, charge - 9);
+      charges.forEach((node) => { node.textContent = `${charge} %`; });
+      if (!charge) clearInterval(drain);
+    }, 45);
+
+    setTimeout(() => {
+      const leds = [...svg.querySelectorAll('.led')].sort(() => Math.random() - 0.5);
+      leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, 500)));
+      svg.querySelectorAll('.fan').forEach(spinDown);
+    }, 550);
+    setTimeout(() => svg.classList.add('powered-off'), 1100);
+    setTimeout(() => location.assign(logoutLink.href), SHUTDOWN_MS);
+  }
+
+  function onLogoutClick(event) {
+    if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    unplug();
+  }
+
   async function poll() {
-    if (document.hidden) return;
+    if (document.hidden || poweredOff) return;
     try {
       const response = await fetch('/?data=1', { cache: 'no-store', credentials: 'same-origin', redirect: 'manual' });
       if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 403) {
@@ -539,6 +648,14 @@
     if ((host.clientWidth < 720) !== narrow) render();
   }).observe(host);
   motion.addEventListener('change', render);
+  logoutLink.addEventListener('click', onLogoutClick);
+  host.addEventListener('click', (event) => {
+    if (event.target.closest('.plug-link')) onLogoutClick(event);
+  });
+  // Coming back via the back/forward cache must not show a dead rack
+  addEventListener('pageshow', (event) => {
+    if (event.persisted && poweredOff) location.reload();
+  });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) poll();
   });

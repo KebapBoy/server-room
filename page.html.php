@@ -12,7 +12,7 @@
 <main>
   <header class="top">
     <h1><?= h(BASE_DOMAIN) ?></h1>
-    <p>Angemeldet als <?= h($displayName) ?> · <a href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Abmelden</a></p>
+    <p>Angemeldet als <?= h($displayName) ?> · <a id="logout" href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Abmelden</a></p>
   </header>
   <div id="rack" class="rack"></div>
   <noscript>

@@ -7,6 +7,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 - Status LEDs per container (green running, yellow unhealthy, created or paused, red stopped), filler units for shorter racks and animated pseudo traffic between containers that share a Docker network.
 - Updates every 15 s without reloading.
 - Admins see every stack and container; everyone else only the containers of their own services. The filter runs on the server.
+- Sign out by pulling the power plug of the rack, with a little shutdown animation (see below).
 - Works without JavaScript as a plain link list.
 - Follows light and dark mode and "reduce motion".
 
@@ -133,6 +134,12 @@ The first matching rule wins:
 
 - Each rack has a head unit with its name and a status LED.
 
+### Signing out
+
+All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it (so does the sign-out link in the header). The UPS drains, the LEDs go out one by one, the fans coast down and the rack dims, then the page goes to Authelia's logout.
+
+Without JavaScript or with "reduce motion" the plug is a plain link to the logout.
+
 ## Development
 
 - No build step and no dependencies. Changes are live on the next request; nginx only needs a reload when its conf changes.
@@ -154,7 +161,7 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `index.php` | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint |
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
-| `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic |
+| `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 
 See [CHANGELOG.md](CHANGELOG.md) for the history and [AGENTS.md](AGENTS.md) for contribution guidelines.

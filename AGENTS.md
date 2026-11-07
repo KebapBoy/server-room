@@ -13,7 +13,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 | `index.php` | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint |
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
-| `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic |
+| `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `README.md` | What it does, requirements, installation, configuration |
 | `CHANGELOG.md` | Release notes, one section per version |
