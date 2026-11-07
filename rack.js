@@ -19,8 +19,11 @@
   const MAX_PACKETS = 24;
   const NEW_TAB = { target: '_blank', rel: 'noopener' };  // service links always open a new tab
   const TOP = 26;             // room above the racks for the inter-rack cable
-  const FLOOR_H = 44;         // room below the racks for the power strip
-  const PLUG_DROP = 90;       // stacked racks: floor socket this far below the strip, room to pull the plug
+  const FLOOR_H = 84;         // room below the racks for the power strip and the plug
+  const STRIP_SCALE = 1.6;    // power strip relative to the rest
+  const PLUG_SCALE = 2;       // plug, socket and marker tag relative to the rest
+  const PLUG_ROOM = 180;      // from the end of the power strip to the wall, room to pull the plug
+  const PLUG_DROP = 170;      // stacked racks: floor socket this far below the strip, room to pull the plug
   // From pulling the plug until the UPS is down to LOW_BATTERY and shuts the services
   // down; the countdown hits 0 right then. Everything runs on battery until that point.
   const SHUTDOWN_MS = 10000;
@@ -466,22 +469,39 @@
     routes.push({ path, from: [a.uplink.led], to: [b.uplink.led] });
   }
 
-  // Wall socket with the plug in it, drawn sideways: the wall at wallX, the cord coming
-  // from the left at height sy. The plug is the logout link, which is returned.
-  function drawPlug(parent, wallX, sy) {
+  // Wall socket with the plug in it, drawn sideways and PLUG_SCALE times larger around
+  // (wallX, sy): the wall at wallX, the cord coming from the left at height sy. A marker
+  // tag on the cord carries the label; `upright` keeps its text level when the whole
+  // assembly is turned by 90°. The plug is the logout link, which is returned.
+  function drawPlug(parent, wallX, sy, upright = false) {
+    const g = el(parent, 'g', { transform: `translate(${wallX} ${sy}) scale(${PLUG_SCALE}) translate(${-wallX} ${-sy})` });
     const bodyRight = wallX - 6;
     const bodyLeft = bodyRight - 24;
-    el(parent, 'path', { d: `M${wallX} ${sy - 30}V${sy + FLOOR_H / 2 - 1}`, class: 'rail' });
-    for (let hy = sy - 28; hy < sy + FLOOR_H / 2 - 6; hy += 6) el(parent, 'path', { d: `M${wallX} ${hy}l5 5`, class: 'vent' });
+    el(g, 'path', { d: `M${wallX} ${sy - 30}V${sy + 20}`, class: 'rail' });
+    for (let hy = sy - 28; hy < sy + 16; hy += 6) el(g, 'path', { d: `M${wallX} ${hy}l5 5`, class: 'vent' });
 
-    const a = el(parent, 'a', { href: logoutUrl, class: 'plug-link', 'aria-label': 'Pull the plug to sign out' });
+    const a = el(g, 'a', { href: logoutUrl, class: 'plug-link', 'aria-label': 'Pull the plug to sign out' });
     el(a, 'title', {}, 'Pull the plug · sign out');
-    el(a, 'rect', { x: bodyLeft - 20, y: sy - 24, width: wallX - bodyLeft + 20, height: 36, class: 'hit' });
+    el(a, 'rect', { x: bodyLeft - 44, y: sy - 24, width: wallX - bodyLeft + 44, height: 46, class: 'hit' });
     const plug = el(a, 'g', { class: 'plug' });
     el(plug, 'path', { d: `M${bodyLeft - 24} ${sy}H${bodyLeft}`, class: 'cable' });
     el(plug, 'path', { d: `M${bodyRight} ${sy - 3.5}h5M${bodyRight} ${sy + 3.5}h5`, class: 'pin' });
     el(plug, 'rect', { x: bodyLeft, y: sy - 7, width: 24, height: 14, rx: 3, class: 'plug-body' });
     for (let i = 0; i < 3; i++) el(plug, 'path', { d: `M${bodyLeft + 5 + i * 3} ${sy - 4}v8`, class: 'vent' });
+
+    // Marker tag: a band around the cord and a flag with the label hanging from it
+    const bandX = bodyLeft - 14;
+    const tag = el(plug, 'g', upright ? { transform: `rotate(-90 ${bandX} ${sy})` } : {});
+    const tagW = 36;
+    const tagH = 11;
+    // Below the cord, or (turned assembly) sticking out to the left of the upright cord
+    const fx = upright ? bandX - 3 - tagW : bandX - tagW / 2;
+    const fy = upright ? sy - tagH / 2 : sy + 4;
+    el(tag, 'path', { d: upright ? `M${bandX - 3} ${sy}H${fx + tagW}` : `M${bandX} ${sy + 3}V${fy}`, class: 'tag-strap' });
+    el(tag, 'rect', { x: fx, y: fy, width: tagW, height: tagH, rx: 1.5, class: 'tag' });
+    el(tag, 'text', { x: fx + tagW / 2, y: fy + tagH / 2 + 2.1, 'text-anchor': 'middle', class: 'tag-text' }, 'SIGN OUT');
+    el(plug, 'rect', { x: bandX - 2, y: sy - 3, width: 4, height: 6, rx: 1, class: 'tag' });
+
     // The socket plate is drawn last so it hides the pins while plugged in
     el(a, 'rect', { x: wallX - 6, y: sy - 11, width: 6, height: 22, rx: 1, class: 'face' });
     return a;
@@ -495,31 +515,32 @@
       ups: ctx.ups,
       x: narrow ? ctx.channelX - 2 + i * 3 : ctx.channelX + 7,
     }));
-    for (const f of feeds) el(layer, 'path', { d: `M${f.ups.x} ${f.ups.y}H${f.x}V${sy - 5}`, class: 'cable' });
+    const k = STRIP_SCALE;
+    for (const f of feeds) el(layer, 'path', { d: `M${f.ups.x} ${f.ups.y}H${f.x}V${sy - 5 * k}`, class: 'cable' });
 
     // Stacked racks: the strip ends flush with the rack frame
     const right = narrow ? contexts[0].channelX + 8 : Math.max(...feeds.map((f) => f.x)) + 14;
-    const left = narrow ? right - 120 : Math.min(...feeds.map((f) => f.x)) - 30;
-    el(layer, 'rect', { x: left, y: sy - 5, width: right - left, height: 10, rx: 2, class: 'face' });
-    for (const f of feeds) el(layer, 'rect', { x: f.x - 3, y: sy - 2.5, width: 6, height: 5, rx: 1, class: 'port' });
-    el(layer, 'rect', { x: left + 5, y: sy - 3, width: 9, height: 6, rx: 1, class: 'port' });
-    led(layer, left + 19, sy, 'bad', 1.8).classList.add('strip-led');
+    const left = narrow ? right - 160 : Math.min(...feeds.map((f) => f.x)) - 40;
+    el(layer, 'rect', { x: left, y: sy - 5 * k, width: right - left, height: 10 * k, rx: 2 * k, class: 'face' });
+    for (const f of feeds) el(layer, 'rect', { x: f.x - 3 * k, y: sy - 2.5 * k, width: 6 * k, height: 5 * k, rx: k, class: 'port' });
+    el(layer, 'rect', { x: left + 5 * k, y: sy - 3 * k, width: 9 * k, height: 6 * k, rx: k, class: 'port' });
+    led(layer, left + 19 * k, sy, 'bad', 1.8 * k).classList.add('strip-led');
 
+    // Where the cord meets the plug, measured from the wall
+    const cordEnd = 30 * PLUG_SCALE;
     if (narrow) {
-      // Rotating by 90° turns the cord side (left) into up and the wall into the floor at py
-      const px = right - 30;
+      // Rotating by 90° turns the cord side (left) into up and the wall into the floor at
+      // py; the wall then reaches 30 units (scaled) to the right of px
+      const px = right - 1 - 30 * PLUG_SCALE;
       const py = sy + PLUG_DROP;
-      el(layer, 'path', { d: `M${px} ${sy + 5}V${py - 30}`, class: 'cable' });
-      drawPlug(el(layer, 'g', { transform: `rotate(90 ${px} ${py})` }), px, py);
-      const label = el(layer, 'a', { href: logoutUrl, class: 'plug-link', 'aria-hidden': 'true', tabindex: '-1' });
-      el(label, 'text', { x: px - 14, y: py - 14, 'text-anchor': 'end', class: 'small' }, 'SIGN OUT');
+      el(layer, 'path', { d: `M${px} ${sy + 5 * k}V${py - cordEnd}`, class: 'cable' });
+      drawPlug(el(layer, 'g', { transform: `rotate(90 ${px} ${py})` }), px, py, true);
       return right + 1;
     }
-    const wallX = right + 72;
-    el(layer, 'path', { d: `M${right} ${sy}H${wallX - 30}`, class: 'cable' });
-    const a = drawPlug(layer, wallX, sy);
-    el(a, 'text', { x: wallX - 8, y: sy - 13, 'text-anchor': 'end', class: 'small' }, 'SIGN OUT');
-    return wallX + 7;
+    const wallX = right + PLUG_ROOM;
+    el(layer, 'path', { d: `M${right} ${sy}H${wallX - cordEnd}`, class: 'cable' });
+    drawPlug(layer, wallX, sy);
+    return wallX + 6 * PLUG_SCALE;
   }
 
   // ---- pseudo traffic -----------------------------------------------------
@@ -590,8 +611,8 @@
     const n = racks.length;
     const floor = TOP + (isNarrow ? n * rackH + (n - 1) * gap : rackH);
     // Must match the right edge drawPower() returns
-    const viewW = isNarrow ? w + 2 : (n - 1) * (w + CHANNEL + gap) + w + 112;
-    const height = floor + (isNarrow ? FLOOR_H / 2 + PLUG_DROP + 10 : FLOOR_H);
+    const viewW = isNarrow ? w + 2 : (n - 1) * (w + CHANNEL + gap) + w + 33 + PLUG_ROOM + 6 * PLUG_SCALE;
+    const height = floor + (isNarrow ? FLOOR_H / 2 + PLUG_DROP + 7 * PLUG_SCALE : FLOOR_H);
     return { cols, w, gap, plans, rackH, floor, height, viewW };
   }
 

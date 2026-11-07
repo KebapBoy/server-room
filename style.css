@@ -20,6 +20,7 @@
   --edge: #8c959e; --engrave: #5d666f; --cable: #2d3339; --blank: rgba(42, 48, 55, .05);
   --plastic: #1d2227; --display: #142019; --display-text: #8ff0a4; --plate-text: #e8ecf0;
   --brush: rgba(255, 255, 255, .6);
+  --tag: #f2cf3c; --tag-edge: #b8941a; --tag-text: #2a2306;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -30,6 +31,7 @@
     --edge: #5b646e; --engrave: #9aa3ad; --cable: #5f6973; --blank: rgba(0, 0, 0, .2);
     --plastic: #0b0d10; --display: #0c1510; --display-text: #7fe39a; --plate-text: #d9dfe5;
     --brush: rgba(255, 255, 255, .05);
+    --tag: #d8b52f; --tag-edge: #8f7417; --tag-text: #1d1803;
   }
 }
 * { box-sizing: border-box; }
@@ -141,13 +143,16 @@ h1 b { color: var(--accent); }
 /* Power strip and wall socket; pulling the plug logs out */
 .pin { stroke: var(--line); stroke-width: 1.6; }
 .plug-body { stroke: var(--line); stroke-width: 1.3; fill: var(--bg); }
+/* Marker tag on the plug cord carrying the label */
+.tag { fill: var(--bg); stroke: var(--line); stroke-width: .7; }
+.tag-strap { stroke: var(--line); stroke-width: 1.2; }
+.rack-svg .tag-text { font-size: 6px; font-weight: 700; letter-spacing: .06em; }
 .hit { fill: transparent; stroke: none; }
 .plug { transition: transform .2s ease-out; }
 .plug-link { cursor: pointer; }
 .plug-link:focus { outline: none; }
 .plug-link:hover .plug, .plug-link:focus-visible .plug { transform: translateX(-4px); }
 .plug-link:hover .plug-body, .plug-link:focus-visible .plug-body { stroke: var(--accent); stroke-width: 1.8; }
-.plug-link:hover text, .plug-link:focus-visible text { fill: var(--accent); }
 .plug-link.locked { pointer-events: none; }
 .plug-link.pulled .plug { transform: translateX(-22px); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
 .rack-svg.powered-off { opacity: .35; filter: grayscale(1); }
@@ -188,5 +193,8 @@ h1 b { color: var(--accent); }
   .blank-body { fill: var(--blank); stroke: var(--edge); }
   .cable { stroke: var(--cable); opacity: .9; }
   .pin { stroke: var(--metal-lo); }
+  .tag { fill: var(--tag); stroke: var(--tag-edge); }
+  .tag-strap { stroke: var(--tag-edge); }
+  .rack-svg .tag-text { fill: var(--tag-text); }
   .tile { background: linear-gradient(var(--sled-hi), var(--sled-lo)); border-color: var(--edge-strong); }
 }
