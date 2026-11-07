@@ -13,6 +13,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 | `index.php` | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint |
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
+| `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `README.md` | What it does, requirements, installation, configuration |
@@ -23,7 +24,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 
 - No build step and no dependencies: plain PHP 8, vanilla JavaScript, one stylesheet. Keep it that way.
 - Identifiers and comments in English. UI texts in German.
-- Nothing in this folder is served by URL; `page.html.php` inlines CSS and JS. New assets must be inlined the same way.
+- Nothing in this folder is served by URL; `page.html.php` inlines CSS, JS and the favicon. New assets must be inlined the same way.
 - Access is decided on the server only. Never send the browser anything the user may not see, neither in the page nor in `/?data=1`.
 - Keep the fallbacks working: no JavaScript, `prefers-reduced-motion`, `prefers-color-scheme`.
 - This repository is public. Use `example.com`, `192.0.2.x` and generic names in code, docs, tests and commit messages. Never commit real domains, IP addresses, user names, tokens, `data/`.

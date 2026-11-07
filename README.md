@@ -164,6 +164,7 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `index.php` | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint |
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
+| `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 
