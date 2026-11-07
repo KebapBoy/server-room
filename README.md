@@ -9,6 +9,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 - Admins see every stack and container; everyone else only the containers of their own services. The filter runs on the server.
 - Sign out by pulling the power plug of the rack, with a little shutdown animation (see below).
 - Greets the user by first name, typed like on a typewriter in a terminal window.
+- Patch cables to a switch and a fibre link between the racks.
 - Works without JavaScript as a list of tiles.
 - Follows light and dark mode, "more contrast" and "reduce motion".
 
@@ -138,6 +139,7 @@ The first matching rule wins:
 
 - Each rack has a head unit with a name plate, a status LED and the number of active modules; a small display next to it shows the age of the data and status messages.
 - The racks are centred and sized to the window, from 75 % of the width up to 1500 px; they stack on narrow screens.
+- Patch cables lead from the chassis to the switch, the racks are linked by fibre.
 - Faceplates are brushed aluminium, the rack is light grey steel (anthracite in dark mode); colours are CSS variables (`--metal-*`, `--steel-*`) in `style.css`.
 - Service links open in a new tab.
 

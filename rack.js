@@ -235,17 +235,27 @@
   function drawSwitch(g, box, ctx) {
     const { x, y, w } = box;
     el(g, 'text', { x, y: y + 14, class: 'small' }, 'SWITCH');
+    const port = (px, width) => {
+      el(g, 'rect', { x: px, y: y + 10, width, height: 7, rx: 1, class: 'port' });
+      const l = el(g, 'rect', { x: px + width / 2 - 1.5, y: y + 5, width: 3, height: 2, class: 'led off' });
+      return { x: px + width / 2, y: y + 13.5, led: l };
+    };
+    // Two SFP cages flush right, set apart from the copper ports: the outer one takes the
+    // fibre to the neighbouring rack, the inner one stays free
+    const sfpX = x + w - 23;
     const start = x + 44;
-    const count = Math.min(24, Math.floor((w - 44) / 12));
-    let last = null;
-    for (let i = 0; i < count; i++) {
-      const px = start + i * 12;
-      el(g, 'rect', { x: px, y: y + 10, width: 9, height: 7, rx: 1, class: 'port' });
-      const l = el(g, 'rect', { x: px + 3, y: y + 5, width: 3, height: 2, class: 'led ' + (Math.random() < 0.75 ? 'ok' : 'off') });
-      if (l.classList.contains('ok')) blink(l, 0.4, 2.5);
-      last = { x: px + 9, y: y + 13.5, led: l };
-    }
-    ctx.uplink = last;
+    const count = Math.min(24, Math.floor((sfpX - 6 - start + 3) / 12));
+    ctx.ports = [];
+    for (let i = 0; i < count; i++) ctx.ports.push(port(start + i * 12, 9));
+    port(sfpX, 10);
+    el(g, 'path', { d: `M${sfpX + 2} ${y + 11.5}h6`, class: 'vent' });
+    ctx.uplink = port(sfpX + 13, 10);
+  }
+
+  // Lights a switch port's link LED once a cable is plugged in
+  function linkUp(port) {
+    port.led.setAttribute('class', 'led ok');
+    blink(port.led, 0.4, 2.5);
   }
 
   function drawPatch(g, box) {
@@ -392,7 +402,7 @@
     if (uplinked.length) {
       const px = x + w - 14;
       el(g, 'rect', { x: px, y: y + 4, width: 10, height: 8, rx: 1, class: 'port' });
-      ctx.nics.push({ x: px + 10, y: y + 8, leds: uplinked });
+      ctx.nics.push({ x: px + 5, y: y + 8, leds: uplinked });
     }
   }
 
@@ -420,7 +430,7 @@
     const g = el(svg, 'g', { class: 'rack-unit' });
     const units = sum(plan);
     drawFrame(g, x0, y0, w, units);
-    const ctx = { routes: [], nics: [], uplink: null, headLed: null, ups: null };
+    const ctx = { routes: [], nics: [], ports: [], uplink: null, headLed: null, ups: null };
     let y = y0 + CAP;
     for (const unit of plan) {
       const h = unit.u * U;
@@ -445,27 +455,111 @@
     return ctx;
   }
 
-  // Cables from each chassis NIC through the channel to the switch uplink
-  function drawCables(layer, ctx) {
-    if (!ctx.uplink || !ctx.nics.length) return;
-    const cx = ctx.channelX;
-    const bottom = Math.max(...ctx.nics.map((n) => n.y));
-    el(layer, 'path', { d: `M${cx - 3} ${ctx.uplink.y - 6}V${bottom + 6}M${cx + 3} ${ctx.uplink.y - 6}V${bottom + 6}`, class: 'channel' });
-    for (const nic of ctx.nics) {
-      const d = `M${nic.x} ${nic.y}H${cx}V${ctx.uplink.y}H${ctx.uplink.x}`;
-      const path = el(layer, 'path', { d, class: 'cable' });
-      ctx.routes.push({ path, from: nic.leds, to: [ctx.uplink.led] });
+  // ---- patch cables -----------------------------------------------------
+
+  const PATCH_COLORS = ['yellow', 'red', 'green', 'blue'];
+
+  // Orthogonal route through the points with rounded bends, as cables cannot kink
+  function cablePath(points, r = 3) {
+    let d = `M${points[0][0]} ${points[0][1]}`;
+    for (let i = 1; i < points.length - 1; i++) {
+      const [x, y] = points[i];
+      const [px, py] = points[i - 1];
+      const [nx, ny] = points[i + 1];
+      const lin = Math.hypot(x - px, y - py);
+      const lout = Math.hypot(nx - x, ny - y);
+      const k = Math.min(r, lin / 2, lout / 2);
+      if (!k) continue;
+      d += `L${x + ((px - x) * k) / lin} ${y + ((py - y) * k) / lin}`;
+      d += `Q${x} ${y} ${x + ((nx - x) * k) / lout} ${y + ((ny - y) * k) / lout}`;
     }
+    const [lx, ly] = points.at(-1);
+    return d + `L${lx} ${ly}`;
   }
 
-  // One cable between neighbouring racks' switches (the Hawser link)
+  const FIBER_TAIL = 9;        // fibre: the duplex cord splits into its two strands this far from the plug
+
+  // Jacket with a darker edge and a highlight, a plug in each port at the ends: RJ45 for
+  // copper, an SFP module with a duplex LC plug for fibre ('fiber'). Returns the core path
+  // for the traffic.
+  function drawPatchCable(layer, points, color) {
+    const g = el(layer, 'g', { class: 'patch patch-' + color });
+    const fiber = color === 'fiber';
+    const ends = [[points[0], points[1]], [points.at(-1), points.at(-2)]];
+    let route = points;
+    if (fiber) {
+      // The cord itself ends where the strands split off
+      const [[a, a1], [b, b1]] = ends;
+      route = [toward(a, a1, FIBER_TAIL), ...points.slice(1, -1), toward(b, b1, FIBER_TAIL)];
+    }
+    const d = cablePath(route);
+    el(g, 'path', { d, class: 'patch-edge' });
+    const core = el(g, 'path', { d, class: 'patch-core' });
+    el(g, 'path', { d, class: 'patch-shine' });
+    for (const [end, next] of ends) {
+      // Drawn as if the cable left the port downwards, then turned its actual way
+      const [x, y] = end;
+      const angle = (Math.atan2(next[1] - y, next[0] - x) * 180) / Math.PI - 90;
+      const p = el(g, 'g', { transform: `rotate(${angle.toFixed(1)} ${x} ${y})` });
+      if (fiber) drawLcPlug(p, x, y);
+      else el(p, 'rect', { x: x - 3.5, y: y - 3, width: 7, height: 6, rx: 1.2, class: 'patch-boot' });
+    }
+    return core;
+  }
+
+  // The point dist along the straight line from a towards b
+  function toward([ax, ay], [bx, by], dist) {
+    const len = Math.hypot(bx - ax, by - ay) || 1;
+    return [ax + ((bx - ax) * dist) / len, ay + ((by - ay) * dist) / len];
+  }
+
+  // SFP transceiver sticking out of the port with its bail, two strands running into a
+  // pair of LC plugs held by a duplex clip; the cord leaves towards +y
+  function drawLcPlug(g, x, y) {
+    el(g, 'rect', { x: x - 5.2, y: y - 4.2, width: 10.4, height: 8.4, rx: .8, class: 'sfp-module' });
+    el(g, 'path', { d: `M${x - 4.4} ${y + 4.2}v2.4h8.8v-2.4`, class: 'sfp-bail' });
+    for (const side of [-1, 1]) {
+      const sx = x + side * 1.6;
+      el(g, 'path', { d: `M${sx} ${y + 2}V${y + 4.5}Q${sx} ${y + FIBER_TAIL - 2} ${x} ${y + FIBER_TAIL}`, class: 'fiber-strand' });
+      el(g, 'rect', { x: sx - 1.35, y: y - 2.6, width: 2.7, height: 4.6, rx: .5, class: 'lc-plug' });
+    }
+    el(g, 'rect', { x: x - 3.6, y: y - .4, width: 7.2, height: 1.3, rx: .4, class: 'lc-clip' });
+  }
+
+  // One cable from each chassis NIC through the channel to its own switch port. Lower NICs
+  // run further out in the channel and higher in the lane below the switch, so no cable crosses another.
+  // The colours take turns within a rack, starting one further on in each rack.
+  function drawCables(layer, ctx, index) {
+    if (!ctx.uplink || !ctx.nics.length) return;
+    const cx = ctx.channelX;
+    const n = ctx.nics.length;
+    const bottom = Math.max(...ctx.nics.map((nic) => nic.y));
+    el(layer, 'path', { d: `M${cx - 5} ${ctx.uplink.y - 6}V${bottom + 6}M${cx + 5} ${ctx.uplink.y - 6}V${bottom + 6}`, class: 'channel' });
+    const step = n > 1 ? Math.min(1.6, 5 / (n - 1)) : 0;
+    const lane = Math.min(2.4, 14 / n);
+    ctx.nics.forEach((nic, i) => {
+      const port = ctx.ports[Math.max(0, ctx.ports.length - n + i)];
+      const x = cx - ((n - 1) * step) / 2 + i * step;
+      const y = ctx.uplink.y + 15.5 + (n - 1 - i) * lane;
+      const path = drawPatchCable(layer, [[nic.x, nic.y], [x, nic.y], [x, y], [port.x, y], [port.x, port.y]], PATCH_COLORS[(index + i) % PATCH_COLORS.length]);
+      linkUp(port);
+      ctx.routes.push({ path, from: nic.leds, to: [port.led] });
+    });
+  }
+
+  // One fibre between neighbouring racks' SFP uplinks (the Hawser link), outside the
+  // other cables in the channel and in the lane right below the switch
   function drawInterRack(layer, a, b, routes) {
     if (!a.uplink || !b.uplink) return;
-    const sideBySide = b.top === a.top;
-    const d = sideBySide
-      ? `M${a.uplink.x} ${a.uplink.y}H${a.channelX}V${a.top - 12}H${b.channelX}V${b.uplink.y}H${b.uplink.x}`
-      : `M${a.uplink.x} ${a.uplink.y}H${a.channelX}V${b.uplink.y}H${b.uplink.x}`;
-    const path = el(layer, 'path', { d, class: 'cable uplink' });
+    const ax = a.channelX + 4.5;
+    const bx = b.channelX + 4.5;
+    const ay = a.uplink.y + FIBER_TAIL + 3;
+    const by = b.uplink.y + FIBER_TAIL + 3;
+    const via = b.top === a.top ? [[ax, a.top - 12], [bx, a.top - 12]] : [];
+    const points = [[a.uplink.x, a.uplink.y], [a.uplink.x, ay], [ax, ay], ...via, [bx, by], [b.uplink.x, by], [b.uplink.x, b.uplink.y]];
+    const path = drawPatchCable(layer, points, 'fiber');
+    linkUp(a.uplink);
+    linkUp(b.uplink);
     routes.push({ path, from: [a.uplink.led], to: [b.uplink.led] });
   }
 
@@ -658,8 +752,8 @@
     });
     const cables = el(svg, 'g', { class: 'cables' });
     const routes = [];
-    for (const ctx of contexts) {
-      drawCables(cables, ctx);
+    for (const [i, ctx] of contexts.entries()) {
+      drawCables(cables, ctx, i);
       routes.push(...ctx.routes);
     }
     for (let i = 1; i < contexts.length; i++) drawInterRack(cables, contexts[i - 1], contexts[i], routes);
