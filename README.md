@@ -10,7 +10,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 - Sign out by pulling the power plug of the rack, with a little shutdown animation (see below).
 - Greets the user by first name, typed like on a typewriter.
 - Works without JavaScript as a list of tiles.
-- Follows light and dark mode and "reduce motion".
+- Follows light and dark mode, "more contrast" and "reduce motion".
 
 ## Requirements
 
@@ -138,6 +138,7 @@ The first matching rule wins:
 
 - Each rack has a head unit with a name plate, a status LED and the number of active modules; a small display next to it shows the age of the data and status messages.
 - The racks are centred and sized to the window, from 75 % of the width up to 1500 px; they stack on narrow screens.
+- Faceplates are brushed aluminium, the rack is light grey steel (anthracite in dark mode); colours are CSS variables (`--metal-*`, `--steel-*`) in `style.css`.
 - Service links open in a new tab.
 
 ### Signing out

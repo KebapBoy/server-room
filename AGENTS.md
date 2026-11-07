@@ -27,7 +27,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 - Identifiers and comments in English. UI texts in English.
 - Nothing in this folder is served by URL; `page.html.php` inlines CSS, JS and the favicon. New assets must be inlined the same way.
 - Access is decided on the server only. Never send the browser anything the user may not see, neither in the page nor in `/?data=1`.
-- Keep the fallbacks working: no JavaScript, `prefers-reduced-motion`, `prefers-color-scheme`.
+- Keep the fallbacks working: no JavaScript, `prefers-reduced-motion`, `prefers-color-scheme`, `prefers-contrast: more`.
 - This repository is public. Use `example.com`, `192.0.2.x` and generic names in code, docs, tests and commit messages. Never commit real domains, IP addresses, user names, tokens, `data/`.
 
 ## With every change

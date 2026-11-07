@@ -10,6 +10,28 @@
     --accent: #58a6ff; --ok: #3fb950; --warn: #e3b341; --bad: #f85149; --act: #58a6ff;
   }
 }
+/* Rack materials: aluminium faceplates and drive sleds, a light grey (dark: anthracite)
+   steel rack, black plastic */
+:root {
+  --metal-hi: #fbfcfd; --metal: #e1e5e9; --metal-lo: #c2c9d0;
+  --sled-hi: #f0f2f4; --sled-lo: #d2d7dc;
+  --steel-hi: #e4e7e4; --steel: #cbd0cc; --steel-lo: #a4aba6;  /* light grey rack, RAL 7035 */
+  --plate: #343a41; --edge-strong: #4d555e;
+  --edge: #8c959e; --engrave: #5d666f; --cable: #2d3339; --blank: rgba(42, 48, 55, .05);
+  --plastic: #1d2227; --display: #142019; --display-text: #8ff0a4; --plate-text: #e8ecf0;
+  --brush: rgba(255, 255, 255, .6);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --metal-hi: #4b535c; --metal: #383f47; --metal-lo: #2a3036;
+    --sled-hi: #3b424b; --sled-lo: #2b3138;
+    --steel-hi: #2c3238; --steel: #1c2025; --steel-lo: #0d0f12;
+    --plate: #1c2025; --edge-strong: #7d8791;
+    --edge: #5b646e; --engrave: #9aa3ad; --cable: #5f6973; --blank: rgba(0, 0, 0, .2);
+    --plastic: #0b0d10; --display: #0c1510; --display-text: #7fe39a; --plate-text: #d9dfe5;
+    --brush: rgba(255, 255, 255, .05);
+  }
+}
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--line); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { padding: 1.5rem 1rem 1rem; }
@@ -76,6 +98,7 @@ h1 b { color: var(--accent); }
 .rail { stroke: var(--line); stroke-width: .9; }
 .hole { stroke: var(--muted); stroke-width: .7; }
 .face { stroke: var(--line); stroke-width: 1.1; fill: var(--panel); }
+.brush { display: none; }
 .screw { stroke: var(--muted); stroke-width: .8; fill: var(--bg); }
 .vent, .blade { stroke: var(--muted); stroke-width: .9; }
 .slot { stroke: var(--muted); stroke-width: 2.2; opacity: .55; }
@@ -138,4 +161,31 @@ h1 b { color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   .blink, .fan, .caret { animation: none; }
+}
+
+/* Material: brushed aluminium in an anthracite rack. With "more contrast" the drawing
+   stays in the plain outlines above; every other setting, "less" included, gets metal. */
+@media not all and (prefers-contrast: more) {
+  .frame { fill: url(#g-frame); stroke: var(--steel-lo); }
+  .rail { fill: var(--steel); stroke: var(--steel-lo); }
+  .hole { fill: var(--steel-lo); stroke: var(--steel-hi); }
+  .face { fill: url(#g-face); stroke: var(--edge); }
+  .brush { display: inline; fill: url(#p-brush); stroke: none; pointer-events: none; }
+  .brush-line { stroke: var(--brush); stroke-width: .5; }
+  .screw { fill: url(#g-screw); stroke: var(--edge); }
+  .vent, .blade { stroke: var(--edge); }
+  .slot { stroke: var(--steel-lo); opacity: .5; }
+  .ring, .tray { stroke: var(--edge-strong); }
+  .port, .plug-body { fill: var(--plastic); stroke: var(--edge); }
+  .plate { fill: var(--plate); stroke: var(--steel-lo); }
+  .rack-svg .title { fill: var(--plate-text); }
+  .display, .lcd { fill: var(--display); stroke: var(--edge); }
+  .rack-svg .on-display, .rack-svg .lcd-text { fill: var(--display-text); }
+  .rack-svg .small { fill: var(--engrave); }
+  .module-body, .pill { fill: url(#g-sled); stroke: var(--edge); }
+  .module-link .module-body { stroke: var(--edge-strong); }
+  .blank-body { fill: var(--blank); stroke: var(--edge); }
+  .cable { stroke: var(--cable); opacity: .9; }
+  .pin { stroke: var(--metal-lo); }
+  .tile { background: linear-gradient(var(--sled-hi), var(--sled-lo)); border-color: var(--edge-strong); }
 }

@@ -145,6 +145,18 @@
 
   // ---- drawing ------------------------------------------------------------
 
+  // Gradients and the brushed texture used by the "Material" rules in style.css
+  function addDefs(svg) {
+    const defs = el(svg, 'defs');
+    const stops = (parent, list) => list.forEach(([offset, colour]) => el(parent, 'stop', { offset, style: `stop-color: var(${colour})` }));
+    stops(el(defs, 'linearGradient', { id: 'g-face', x1: 0, y1: 0, x2: 0, y2: 1 }), [[0, '--metal-hi'], [0.55, '--metal'], [1, '--metal-lo']]);
+    stops(el(defs, 'linearGradient', { id: 'g-sled', x1: 0, y1: 0, x2: 0, y2: 1 }), [[0, '--sled-hi'], [1, '--sled-lo']]);
+    stops(el(defs, 'linearGradient', { id: 'g-frame', x1: 0, y1: 0, x2: 1, y2: 0 }), [[0, '--steel-lo'], [0.5, '--steel-hi'], [1, '--steel-lo']]);
+    stops(el(defs, 'radialGradient', { id: 'g-screw', cx: 0.35, cy: 0.35, r: 0.75 }), [[0, '--metal-hi'], [1, '--metal-lo']]);
+    const brush = el(defs, 'pattern', { id: 'p-brush', width: 7, height: 2, patternUnits: 'userSpaceOnUse' });
+    el(brush, 'path', { d: 'M0 0.5H4.5M5.5 1.5H7', class: 'brush-line' });
+  }
+
   function drawFrame(g, x, y, w, units) {
     const h = CAP * 2 + units * U;
     el(g, 'rect', { x, y, width: w, height: h, rx: 4, class: 'frame' });
@@ -162,6 +174,7 @@
 
   function face(g, x, y, w, h) {
     el(g, 'rect', { x, y: y + 1, width: w, height: h - 2, rx: 2, class: 'face' });
+    el(g, 'rect', { x, y: y + 1, width: w, height: h - 2, rx: 2, class: 'brush' });
     const rows = h > U * 1.5 ? [y + U / 2, y + h - U / 2] : [y + h / 2];
     for (const sx of [x + EAR / 2 + 1, x + w - EAR / 2 - 1]) {
       for (const sy of rows) el(g, 'circle', { cx: sx, cy: sy, r: 2.2, class: 'screw' });
@@ -176,7 +189,7 @@
     // Name plate: recessed field with the environment name and its status LED
     const nameW = name.length * 17 * (FONT_W + 0.14);
     const plateW = nameW + 34;
-    el(g, 'rect', { x, y: y + 7, width: plateW, height: h - 14, rx: 2, class: 'port' });
+    el(g, 'rect', { x, y: y + 7, width: plateW, height: h - 14, rx: 2, class: 'port plate' });
     el(g, 'text', { x: x + 9, y: y + h / 2 + 6, class: 'title' }, name);
     const lx = x + 9 + nameW + 10;
     const state = !rack.online ? 'bad' : model.stale ? 'warn' : 'ok';
@@ -269,9 +282,9 @@
 
   function drawUps(g, box, ctx) {
     const { x, y, w, h } = box;
-    el(g, 'rect', { x, y: y + 8, width: 74, height: h - 16, rx: 2, class: 'port' });
-    el(g, 'text', { x: x + 6, y: y + 20, class: 'small' }, 'UPS');
-    el(g, 'text', { x: x + 6, y: y + 32, class: 'label ups-charge' }, '100 %');
+    el(g, 'rect', { x, y: y + 8, width: 74, height: h - 16, rx: 2, class: 'port display' });
+    el(g, 'text', { x: x + 6, y: y + 20, class: 'small on-display' }, 'UPS');
+    el(g, 'text', { x: x + 6, y: y + 32, class: 'label ups-charge on-display' }, '100 %');
     led(g, x + 88, y + 12, 'ok', 2.4).classList.add('ups-mains');
     el(g, 'text', { x: x + 94, y: y + 14.5, class: 'small' }, 'MAINS');
     led(g, x + 128, y + 12, 'off', 2.4).classList.add('ups-on-battery');
@@ -605,6 +618,7 @@
     const slotW = w + CHANNEL;
 
     const svg = el(null, 'svg', { class: 'rack-svg', role: 'group', 'aria-label': 'Server rack' });
+    addDefs(svg);
     const contexts = racks.map((rack, i) => {
       const x0 = 1 + (narrow ? 0 : i * (slotW + gap));
       const y0 = top + (narrow ? i * (rackH + gap) : 0);
