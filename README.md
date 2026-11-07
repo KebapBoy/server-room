@@ -17,7 +17,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 
 - [SWAG](https://github.com/linuxserver/docker-swag) by linuxserver.io, which serves the page with its bundled PHP-FPM (PHP 8 with the curl extension).
 - Services published through SWAG subdomain proxy confs (`/config/nginx/proxy-confs/<name>.subdomain.conf` with `server_name <name>.*;`, `$upstream_app` and `$upstream_port`).
-- Authelia 4.38 or newer, reachable from SWAG as `http://authelia:9091`, and SWAG's `authelia-server.conf` and `authelia-location.conf` in use. A service counts as protected when its proxy conf includes `authelia-location.conf`.
+- Authelia 4.38 or newer, reachable from SWAG as `http://authelia:9091` (configurable), and SWAG's `authelia-server.conf` and `authelia-location.conf` in use. A service counts as protected when its proxy conf includes `authelia-location.conf`.
 - A JSON snapshot of your compose stacks in `data/stacks.json`, refreshed by a job of your own (see [Stack snapshot](#stack-snapshot)).
 - A current browser. JavaScript is optional.
 
@@ -28,7 +28,11 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
    ```sh
    git clone <this repository> <swag-config>/www/start
    ```
-2. Set `BASE_DOMAIN` and the other constants at the top of `index.php` (see [Configuration](#configuration)).
+2. Create the configuration and set at least `BASE_DOMAIN`:
+
+   ```sh
+   cp .env.example .env
+   ```
 3. Add the page to the server block of your main domain, e.g. `/config/nginx/site-confs/example.com.conf`:
 
    ```nginx
@@ -63,19 +67,20 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 
 ## Configuration
 
-The settings are constants at the top of `index.php`. Service names are proxy conf file names without `.subdomain.conf`.
+All settings live in `.env` next to `index.php`; `.env.example` documents them. Lists are comma-separated, maps are comma-separated `name=value` pairs, and service names are proxy conf file names without `.subdomain.conf`.
 
-| Constant | Default | Meaning |
+| Key | Default | Meaning |
 |---|---|---|
-| `BASE_DOMAIN` | `example.com` | Domain whose subdomains SWAG serves |
+| `BASE_DOMAIN` | `example.com` | Domain whose subdomains SWAG serves (required) |
+| `AUTHELIA_URL` | `http://authelia:9091` | Authelia as reached from the SWAG container |
+| `LOGOUT_URL` | `https://auth.<BASE_DOMAIN>/logout` | Where signing out leads |
 | `PROXY_CONFS` | `/config/nginx/proxy-confs/*.subdomain.conf` | Proxy confs to read |
-| `AUTHELIA_AUTHZ` | `http://authelia:9091/api/authz/auth-request` | Authelia's authz endpoint |
-| `SKIPPED` | `auth` | Services that are never shown |
+| `SKIPPED_SERVICES` | `auth` | Services that are never shown |
 | `ADMIN_GROUP` | `admins` | Group that sees all stacks and containers |
 | `GROUPS_WITHOUT_AUTHELIA` | `admins` | Groups that see services without Authelia |
-| `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` |  | The same per service |
-| `SERVICE_CONTAINERS` |  | Container for services whose proxy conf has no usable upstream |
-| `SERVICE_PATHS` |  | Start path for services whose UI does not live at `/` |
+| `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` |  | The same per service, e.g. `jellyfin=admins\|family` |
+| `SERVICE_CONTAINERS` |  | Container for services whose proxy conf has no usable upstream, e.g. `dashboard=swag` |
+| `SERVICE_PATHS` |  | Start path for services whose UI does not live at `/`, e.g. `pihole=/admin/` |
 | `SNAPSHOT_MAX_AGE` | `180` | Seconds after which the stack snapshot counts as stale |
 
 Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`, `LOW_BATTERY`, `FIBER_GAP_MS`).
@@ -171,6 +176,7 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | File | Purpose |
 |---|---|
 | `index.php` | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint |
+| `.env.example` | Template for `.env`, the installation-specific settings (`.env` itself is not in Git) |
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
 | `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |

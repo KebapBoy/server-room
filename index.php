@@ -1,36 +1,77 @@
 <?php
 // Start page for a SWAG domain: shows every service the logged-in Authelia user may access
-// according to Authelia, drawn as a server rack grouped by Dockhand stacks.
+// according to Authelia, drawn as a server rack grouped by compose stacks.
 // Services come from the active SWAG proxy confs, stacks from data/stacks.json
 // (written by a separate host job, see README). GET /?data=1 returns the filtered model as JSON.
+// Everything specific to an installation is read from .env next to this file (see .env.example).
 
-const BASE_DOMAIN = 'example.com';
-const PROXY_CONFS = '/config/nginx/proxy-confs/*.subdomain.conf';
-const AUTHELIA_AUTHZ = 'http://authelia:9091/api/authz/auth-request';
+const ENV_FILE = __DIR__ . '/.env';
 const SNAPSHOT = __DIR__ . '/data/stacks.json';
-const SNAPSHOT_MAX_AGE = 180;
-const SKIPPED = ['auth'];
-const ADMIN_GROUP = 'admins';
-
-// Services without Authelia (own login): Authelia decides nothing there, so only
-// these groups see them. Can be overridden per service (file name without .subdomain.conf).
-const GROUPS_WITHOUT_AUTHELIA = ['admins'];
-const GROUPS_WITHOUT_AUTHELIA_PER_SERVICE = [
-    // 'plex' => ['admins', 'friends'],
-];
-
-// Services whose proxy conf has no usable upstream: conf name => compose service (also the label)
-const SERVICE_CONTAINERS = [
-    'dashboard' => 'swag',
-];
-
-// Services whose web UI does not live at /: conf name => path
-const SERVICE_PATHS = [
-    'pihole' => '/admin/',
-];
 
 // Docker networks that do not mean two containers talk to each other
 const IGNORED_NETWORKS = ['host', 'none', 'bridge'];
+
+$env = load_env(ENV_FILE);
+if (($env['BASE_DOMAIN'] ?? '') === '') {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "Not configured: copy .env.example to .env and set BASE_DOMAIN.\n";
+    exit;
+}
+
+define('BASE_DOMAIN', $env['BASE_DOMAIN']);
+define('PROXY_CONFS', $env['PROXY_CONFS'] ?? '/config/nginx/proxy-confs/*.subdomain.conf');
+define('AUTHELIA_AUTHZ', rtrim($env['AUTHELIA_URL'] ?? 'http://authelia:9091', '/') . '/api/authz/auth-request');
+define('LOGOUT_URL', $env['LOGOUT_URL'] ?? 'https://auth.' . BASE_DOMAIN . '/logout');
+define('SNAPSHOT_MAX_AGE', (int) ($env['SNAPSHOT_MAX_AGE'] ?? 180));
+define('SKIPPED', env_list($env, 'SKIPPED_SERVICES', 'auth'));
+define('ADMIN_GROUP', $env['ADMIN_GROUP'] ?? 'admins');
+
+// Services without Authelia (own login): Authelia decides nothing there, so only
+// these groups see them. Can be overridden per service (file name without .subdomain.conf).
+define('GROUPS_WITHOUT_AUTHELIA', env_list($env, 'GROUPS_WITHOUT_AUTHELIA', 'admins'));
+define('GROUPS_WITHOUT_AUTHELIA_PER_SERVICE', array_map(
+    fn($groups) => array_values(array_filter(array_map('trim', explode('|', $groups)), 'strlen')),
+    env_map($env, 'GROUPS_WITHOUT_AUTHELIA_PER_SERVICE')
+));
+
+// Services whose proxy conf has no usable upstream: conf name => compose service (also the label)
+define('SERVICE_CONTAINERS', env_map($env, 'SERVICE_CONTAINERS'));
+
+// Services whose web UI does not live at /: conf name => path
+define('SERVICE_PATHS', env_map($env, 'SERVICE_PATHS'));
+
+// KEY=value lines; blank lines, comments (#) and anything else are ignored, quotes around
+// the value are stripped. Returns [] if the file is missing.
+function load_env(string $file): array
+{
+    $env = [];
+    foreach (is_readable($file) ? file($file, FILE_IGNORE_NEW_LINES) : [] as $line) {
+        if (preg_match('/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$/', $line, $match)) {
+            $env[$match[1]] = preg_replace('/^(["\'])(.*)\1$/', '$2', $match[2]);
+        }
+    }
+    return $env;
+}
+
+// Comma-separated list: "a, b" => ['a', 'b']
+function env_list(array $env, string $key, string $default = ''): array
+{
+    return array_values(array_filter(array_map('trim', explode(',', $env[$key] ?? $default)), 'strlen'));
+}
+
+// Comma-separated name=value pairs: "a=x, b=y" => ['a' => 'x', 'b' => 'y']
+function env_map(array $env, string $key): array
+{
+    $map = [];
+    foreach (env_list($env, $key) as $entry) {
+        [$name, $value] = array_map('trim', explode('=', $entry, 2)) + [1 => ''];
+        if ($name !== '' && $value !== '') {
+            $map[$name] = $value;
+        }
+    }
+    return $map;
+}
 
 function read_services(): array
 {

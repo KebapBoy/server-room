@@ -11,6 +11,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 | File | Purpose |
 |---|---|
 | `index.php` | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint |
+| `.env.example` | Template for `.env`, the installation-specific settings (`.env` itself is not in Git) |
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
 | `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |
@@ -28,7 +29,8 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 - Nothing in this folder is served by URL; `page.html.php` inlines CSS, JS and the favicon. New assets must be inlined the same way.
 - Access is decided on the server only. Never send the browser anything the user may not see, neither in the page nor in `/?data=1`.
 - Keep the fallbacks working: no JavaScript, `prefers-reduced-motion`, `prefers-color-scheme`, `prefers-contrast: more`.
-- This repository is public. Use `example.com`, `192.0.2.x` and generic names in code, docs, tests and commit messages. Never commit real domains, IP addresses, user names, tokens, `data/`.
+- Installation-specific values (domain, groups, service names, URLs) belong in `.env`, read by `load_env()` in `index.php`. Add every new key with a comment to `.env.example` and to the configuration table in the README.
+- This repository is public. Use `example.com`, `192.0.2.x` and generic names in code, docs, tests and commit messages. Never commit real domains, IP addresses, user names, tokens, `data/` or `.env`.
 
 ## With every change
 

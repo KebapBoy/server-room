@@ -14,7 +14,7 @@
   <header class="intro terminal" data-title="<?= h(strtolower($firstName ?: 'guest')) ?>@<?= h(BASE_DOMAIN) ?>: ~">
     <h1 id="intro" aria-label="Hello World! <?= h($welcome) ?>"><span class="line">Hello World! </span><span class="line">Welcome to <b><?= h(BASE_DOMAIN) ?></b><?= $firstName !== '' ? ', </span><span class="line">' . h($firstName) : '' ?>!</span></h1>
   </header>
-  <div id="rack" class="rack" data-logout="https://auth.<?= h(BASE_DOMAIN) ?>/logout"></div>
+  <div id="rack" class="rack" data-logout="<?= h(LOGOUT_URL) ?>"></div>
   <noscript>
     <ul class="fallback">
 <?php foreach (link_tiles($model) as $tile): ?>
@@ -25,7 +25,7 @@
       </a></li>
 <?php endforeach; ?>
     </ul>
-    <p class="logout"><a href="https://auth.<?= h(BASE_DOMAIN) ?>/logout">Sign out</a></p>
+    <p class="logout"><a href="<?= h(LOGOUT_URL) ?>">Sign out</a></p>
   </noscript>
   <p id="status" class="status"></p>
 </main>

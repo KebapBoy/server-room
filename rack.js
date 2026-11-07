@@ -747,7 +747,7 @@
   // ---- render, status, polling ------------------------------------------
 
   function currentRacks() {
-    return model.racks.length ? model.racks : [{ name: 'example.com', online: true, links: [], stacks: [] }];
+    return model.racks.length ? model.racks : [{ name: location.hostname, online: true, links: [], stacks: [] }];
   }
 
   // Size of the drawing for a column count, without drawing anything; viewW must match
