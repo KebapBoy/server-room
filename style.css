@@ -33,7 +33,7 @@ h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
 .tile .led.ok { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 2px var(--ok); }
 .tile .led.warn { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 2px var(--warn); }
 .tile .led.bad { background: var(--bad); border-color: var(--bad); box-shadow: 0 0 2px var(--bad); }
-.tile .led.act { background: var(--act); border-color: var(--act); }
+.tile .led.act { background: var(--act); border-color: var(--act); box-shadow: 0 0 2px var(--act); }
 .tile .vents { grid-column: 3 / 5; justify-self: end; width: 13px; height: 9px; background: repeating-linear-gradient(90deg, var(--muted) 0 1px, transparent 1px 4px); }
 .tile-label { grid-column: 1 / 4; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .tile-arrow { width: 8px; height: 8px; fill: none; stroke: var(--line); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -85,7 +85,7 @@ h1 { margin: 0; font: 600 1.2rem/1.2 var(--mono); letter-spacing: .06em; }
 .led.ok { fill: var(--ok); stroke: var(--ok); filter: drop-shadow(0 0 1.5px var(--ok)); }
 .led.warn { fill: var(--warn); stroke: var(--warn); filter: drop-shadow(0 0 1.5px var(--warn)); }
 .led.bad { fill: var(--bad); stroke: var(--bad); filter: drop-shadow(0 0 1.5px var(--bad)); }
-.led.act { fill: var(--act); stroke: var(--act); }
+.led.act { fill: var(--act); stroke: var(--act); filter: drop-shadow(0 0 1.5px var(--act)); }
 .led.flash { opacity: 1 !important; fill: var(--accent); stroke: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
 
 /* UPS battery gauge */
