@@ -77,7 +77,7 @@ The settings are constants at the top of `index.php`. Service names are proxy co
 | `SERVICE_PATHS` |  | Start path for services whose UI does not live at `/` |
 | `SNAPSHOT_MAX_AGE` | `180` | Seconds after which the stack snapshot counts as stale |
 
-Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`).
+Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`, `LOW_BATTERY`).
 
 ## Stack snapshot
 
@@ -143,7 +143,7 @@ The first matching rule wins:
 
 ### Signing out
 
-All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it. A countdown "Shutting down 10... 9... … 0" is typed in real seconds while the UPS units run on battery. At 0 everything is off, the rack greys out and the page fades out before going to Authelia's logout.
+All UPS units hang on a power strip whose plug sits in a wall socket. Clicking the plug pulls it. A countdown "Shutting down 10... 9... … 0" is typed in real seconds while the UPS units run on battery. At 0 the battery is down to 20 % and the UPS powers everything down: traffic stops, LEDs go out and fans coast down while the battery drains to 0 %. The rack stays dark for 2 s, then the page fades out and goes to Authelia's logout.
 
 Without JavaScript or with "reduce motion" the plug is a plain link to the logout. Without JavaScript a sign-out link sits below the tiles.
 

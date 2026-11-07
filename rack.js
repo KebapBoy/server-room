@@ -21,13 +21,15 @@
   const TOP = 26;             // room above the racks for the inter-rack cable
   const FLOOR_H = 44;         // room below the racks for the power strip
   const PLUG_DROP = 90;       // stacked racks: floor socket this far below the strip, room to pull the plug
-  const SHUTDOWN_MS = 10000;  // from pulling the plug until everything is off (the countdown hits 0)
-  // Shutdown phases as fractions of SHUTDOWN_MS; all of them scale with it
+  // From pulling the plug until the UPS is down to LOW_BATTERY and shuts the services
+  // down; the countdown hits 0 right then. Everything runs on battery until that point.
+  const SHUTDOWN_MS = 10000;
+  const LOW_BATTERY = 20;     // % at which the UPS shuts everything down
+  // What follows, as fractions of SHUTDOWN_MS so it all scales with it
   const PHASES = {
-    drain: 0.9,               // UPSs run on battery until it is empty (countdown at 1)
-    ledsOff: 0.1,             // LEDs die one by one after that, all dark at 0
-    fans: 0.1,                // fans coast to a stop by 0
-    fadeOut: 0.15,            // at 0 the rack greys out and the page fades out, then logout
+    powerDown: 0.5,           // 20 → 0 %: LEDs die one by one, fans coast to a stop
+    dark: 0.2,                // at 0 % the rack greys out and stays dark this long ...
+    fadeOut: 0.15,            // ... then the page fades out and we log out
   };
   const phase = (name) => SHUTDOWN_MS * PHASES[name];
 
@@ -684,13 +686,14 @@
     fan.style.transform = `rotate(${angle}deg)`;
     fan.getBoundingClientRect();
     // The curve starts at twice the average speed: about the running speed of 360° per 1.4 s
-    const duration = phase('fans');
+    const duration = phase('powerDown');
     fan.style.transition = `transform ${duration}ms cubic-bezier(.3, .6, .6, 1)`;
     fan.style.transform = `rotate(${angle + (360 / 1.4 / 2) * (duration / 1000)}deg)`;
   }
 
-  // Counts every UPS down from 100 % to 0 within the drain phase, then calls done
-  function drainBatteries(svg, done) {
+  // Shows every UPS draining to LOW_BATTERY within SHUTDOWN_MS and on to 0 % within the
+  // powerDown phase (the shutdown itself runs on timers in unplug())
+  function drainBatteries(svg) {
     const batteries = [...svg.querySelectorAll('.battery')].map((node) => ({
       node,
       cells: [...node.querySelectorAll('.cell')],
@@ -699,7 +702,10 @@
     let start = null;
     const tick = (now) => {
       start ??= now;
-      const charge = Math.max(0, 100 * (1 - (now - start) / phase('drain')));
+      const t = now - start;
+      const charge = t < SHUTDOWN_MS
+        ? 100 - ((100 - LOW_BATTERY) * t) / SHUTDOWN_MS
+        : Math.max(0, LOW_BATTERY * (1 - (t - SHUTDOWN_MS) / phase('powerDown')));
       for (const b of batteries) {
         b.text.textContent = `${Math.ceil(charge)} %`;
         const lit = Math.ceil((charge / 100) * b.cells.length);
@@ -708,7 +714,6 @@
         b.node.classList.toggle('crit', charge <= 10);
       }
       if (charge > 0) requestAnimationFrame(tick);
-      else done();
     };
     requestAnimationFrame(tick);
   }
@@ -744,25 +749,30 @@
     svg.querySelector('.plug-link').classList.add('pulled');
     svg.querySelectorAll('.strip-led, .ups-mains').forEach(ledOff);
     svg.querySelectorAll('.ups-on-battery').forEach((node) => {
-      node.setAttribute('class', 'led warn');
+      node.setAttribute('class', 'led warn ups-on-battery');
       blink(node, 0.4, 0.7);
     });
 
-    drainBatteries(svg, () => {
-      setStatus('Battery empty · signing out …', { warn: true });
-      stopTraffic();
-      const leds = [...svg.querySelectorAll('.led')].sort(() => Math.random() - 0.5);
-      leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, phase('ledsOff'))));
-      svg.querySelectorAll('.fan').forEach(spinDown);
-    });
+    // At LOW_BATTERY the UPS shuts everything down; its own BATT LED stays on until 0 %
+    drainBatteries(svg);
     setTimeout(() => {
-      const fade = phase('fadeOut');
-      svg.style.transition = `opacity ${fade / 2}ms, filter ${fade / 2}ms`;
-      svg.classList.add('powered-off');
-      document.body.style.transition = `opacity ${fade}ms ease-in`;
-      document.body.style.opacity = '0';
+      setStatus('Battery low · powering down …', { warn: true });
+      stopTraffic();
+      const leds = [...svg.querySelectorAll('.led:not(.ups-on-battery)')].sort(() => Math.random() - 0.5);
+      leds.forEach((node) => setTimeout(() => ledOff(node), rand(0, phase('powerDown') * 0.9)));
+      svg.querySelectorAll('.fan').forEach(spinDown);
     }, SHUTDOWN_MS);
-    setTimeout(logout, SHUTDOWN_MS + phase('fadeOut') + 100);
+    setTimeout(() => {
+      setStatus('Battery empty · signing out …', { warn: true });
+      svg.querySelectorAll('.led').forEach(ledOff);
+      svg.style.transition = `opacity ${phase('fadeOut') / 2}ms, filter ${phase('fadeOut') / 2}ms`;
+      svg.classList.add('powered-off');
+    }, SHUTDOWN_MS + phase('powerDown'));
+    setTimeout(() => {
+      document.body.style.transition = `opacity ${phase('fadeOut')}ms ease-in`;
+      document.body.style.opacity = '0';
+    }, SHUTDOWN_MS + phase('powerDown') + phase('dark'));
+    setTimeout(logout, SHUTDOWN_MS + phase('powerDown') + phase('dark') + phase('fadeOut') + 100);
   }
 
   function onLogoutClick(event) {

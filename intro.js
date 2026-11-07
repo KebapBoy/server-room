@@ -56,7 +56,7 @@
       return;
     }
     head.after(caret);
-    // One number per second; 0 arrives together with the moment everything is off
+    // One number per second; 0 arrives when the UPS shuts the services down
     type([{ node: head, text: 'Shutting down ' }, { node: count, text: number(seconds) }], () => 25);
     for (let n = seconds - 1; n >= 0; n--) {
       setTimeout(() => type([{ node: count, text: number(n) }], () => 40), (seconds - n) * 1000);

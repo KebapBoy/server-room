@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-11-07
+
+### Changed
+
+- The countdown runs until the UPS battery reaches 20 % (`LOW_BATTERY`); then the UPS powers everything down while the battery drains to 0 %, the rack stays dark for 2 s and the page fades out.
+
+### Fixed
+
+- The power-down runs on timers, so a tab in the background keeps in step.
+
 ## [0.15.0] - 2026-11-07
 
 ### Added
