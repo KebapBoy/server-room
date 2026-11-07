@@ -39,16 +39,70 @@ body { margin: 0; background: var(--bg); color: var(--line); font: 15px/1.4 syst
 main { padding: 1.5rem 1rem 1rem; }
 a { color: var(--accent); }
 
+/* Greeting and countdown in a terminal window, light or dark with the page. With "more
+   contrast" it turns into plain outlines like the rack drawing. The title bar (data-title)
+   and its three buttons are drawn by ::before. */
+:root {
+  --term-bg: #fbfbf9; --term-bar-hi: #eceef0; --term-bar: #dfe2e5; --term-edge: #c3c8cd;
+  --term-text: #24292f; --term-dim: #6e7781; --term-prompt: #1a7f37; --term-accent: #0969da;
+  --term-btn-1: #ff5f57; --term-btn-2: #febc2e; --term-btn-3: #28c840;
+  --term-glow: transparent; --term-prompt-glow: transparent; --term-scan: rgba(0, 0, 0, .02);
+  --term-shadow: 0 6px 18px rgba(42, 48, 55, .14); --term-inset: rgba(0, 0, 0, .04);
+  --term-border: 1px; --term-bar-h: 1.7rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --term-bg: #0d1117; --term-bar-hi: #323942; --term-bar: #2a3038; --term-edge: #3b434c;
+    --term-text: #d3dae1; --term-dim: #8b949e; --term-prompt: #3fb950; --term-accent: #58a6ff;
+    --term-glow: rgba(211, 218, 225, .3); --term-prompt-glow: rgba(63, 185, 80, .4); --term-scan: rgba(255, 255, 255, .025);
+    --term-shadow: 0 8px 22px rgba(0, 0, 0, .28); --term-inset: rgba(0, 0, 0, .55);
+  }
+}
+@media (prefers-contrast: more) {
+  :root {
+    --term-bg: var(--bg); --term-bar-hi: var(--bg); --term-bar: var(--bg); --term-edge: var(--line);
+    --term-text: var(--line); --term-dim: var(--line); --term-prompt: var(--line); --term-accent: var(--accent);
+    --term-btn-1: var(--line); --term-btn-2: var(--line); --term-btn-3: var(--line);
+    --term-glow: transparent; --term-prompt-glow: transparent; --term-scan: transparent;
+    --term-shadow: none; --term-inset: transparent; --term-border: 1.5px;
+  }
+}
+.terminal {
+  /* Fixed width, so the window does not grow while the text is typed */
+  position: relative; width: min(100%, 34rem);
+  padding: calc(var(--term-bar-h) + .55rem) .8rem .6rem; border: var(--term-border) solid var(--term-edge); border-radius: 7px;
+  background: var(--term-bg); color: var(--term-text); overflow-wrap: anywhere;
+  text-shadow: 0 0 5px var(--term-glow);
+  box-shadow: var(--term-shadow), inset 0 0 2rem var(--term-inset);
+}
+.terminal::before {
+  content: attr(data-title); position: absolute; inset: 0 0 auto; height: var(--term-bar-h);
+  padding: 0 2.9rem; border-bottom: var(--term-border) solid var(--term-edge); border-radius: 6px 6px 0 0;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center; text-shadow: none;
+  font: 500 .7rem/var(--term-bar-h) var(--mono); color: var(--term-dim);
+  background:
+    radial-gradient(circle at .75rem 50%, var(--term-btn-1) .2rem, transparent .23rem),
+    radial-gradient(circle at 1.4rem 50%, var(--term-btn-2) .2rem, transparent .23rem),
+    radial-gradient(circle at 2.05rem 50%, var(--term-btn-3) .2rem, transparent .23rem),
+    linear-gradient(var(--term-bar-hi), var(--term-bar));
+}
+/* Faint scanlines over the screen */
+.terminal::after {
+  content: ''; position: absolute; inset: var(--term-bar-h) 0 0; border-radius: 0 0 6px 6px; pointer-events: none;
+  background: repeating-linear-gradient(transparent 0 2px, var(--term-scan) 2px 3px);
+}
+.terminal .line:first-child::before { content: '$ '; color: var(--term-prompt); text-shadow: 0 0 5px var(--term-prompt-glow); }
+.terminal b { color: var(--term-accent); }
+
 /* Greeting: one line above the racks, beside them on wide screens (see below) */
 .intro { margin-bottom: 1rem; }
 h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
-h1 b { color: var(--accent); }
 .caret { display: inline-block; width: .55em; height: 1.1em; margin-left: 1px; vertical-align: text-bottom; background: currentColor; animation: caret 1s steps(1, end) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* The racks take the middle 75 % (rack.js), so the greeting fits into the left margin */
 @media (min-width: 1400px) {
-  .intro { position: absolute; top: 3.5rem; left: 1rem; width: calc(12.5vw - 2rem); margin: 0; }
-  h1 { font-size: 1.2rem; }
+  .intro { position: absolute; top: 3.5rem; left: .75rem; width: calc(12.5vw - 1.5rem); margin: 0; }
+  h1 { font-size: clamp(.85rem, .75vw, 1.15rem); }
   h1 .line { display: block; }
   main .fallback, main .logout { max-width: min(1500px, 75vw); }
 }
@@ -79,7 +133,7 @@ h1 b { color: var(--accent); }
 /* Rack drawing: outlines only, colour is reserved for LEDs and traffic */
 /* Countdown below the stacked racks, left of the plug (rack.js) */
 .rack { position: relative; }
-.shutdown-text { position: absolute; left: 0; width: 55%; margin: 0; font: 600 1rem/1.5 var(--mono); }
+.shutdown-text { position: absolute; left: 0; margin: 0; font: 600 1rem/1.5 var(--mono); }
 .rack svg { display: block; width: 100%; height: auto; margin: 0 auto; }
 .rack-svg { font-family: var(--mono); fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .rack-svg text { fill: var(--line); stroke: none; }

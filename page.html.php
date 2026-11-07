@@ -11,7 +11,7 @@
 <body>
 <main>
 <?php $welcome = 'Welcome to ' . BASE_DOMAIN . ($firstName !== '' ? ', ' . $firstName : '') . '!'; ?>
-  <header class="intro">
+  <header class="intro terminal" data-title="<?= h(strtolower($firstName ?: 'guest')) ?>@<?= h(BASE_DOMAIN) ?>: ~">
     <h1 id="intro" aria-label="Hello World! <?= h($welcome) ?>"><span class="line">Hello World! </span><span class="line">Welcome to <b><?= h(BASE_DOMAIN) ?></b><?= $firstName !== '' ? ', </span><span class="line">' . h($firstName) : '' ?>!</span></h1>
   </header>
   <div id="rack" class="rack" data-logout="https://auth.<?= h(BASE_DOMAIN) ?>/logout"></div>

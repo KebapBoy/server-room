@@ -14,7 +14,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
 | `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |
-| `intro.js` | Types the greeting and the shutdown countdown |
+| `intro.js` | Types the greeting into the terminal window and the shutdown countdown |
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `README.md` | What it does, requirements, installation, configuration |

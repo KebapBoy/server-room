@@ -835,10 +835,14 @@
     let target = null;
     if (narrow) {
       target = document.createElement('p');
-      target.className = 'shutdown-text';
-      // Pin the first line to the top of the power strip, so new lines grow downwards
+      target.className = 'shutdown-text terminal';
+      target.dataset.title = document.querySelector('.intro')?.dataset.title ?? '';
+      // Pin the window to the top of the power strip, so new lines grow downwards, and end
+      // it a little left of the strip
       const strip = svg.querySelector('.power .face').getBoundingClientRect();
-      target.style.top = Math.round(strip.top - host.getBoundingClientRect().top) + 'px';
+      const box = host.getBoundingClientRect();
+      target.style.top = Math.round(strip.top - box.top) + 'px';
+      target.style.width = Math.round(strip.left - box.left - 12) + 'px';
       host.append(target);
     }
     document.dispatchEvent(new CustomEvent('shutdown', { detail: { ms: SHUTDOWN_MS, target } }));

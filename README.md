@@ -8,7 +8,7 @@ A start page for self-hosted services behind [SWAG](https://github.com/linuxserv
 - Updates every 15 s without reloading.
 - Admins see every stack and container; everyone else only the containers of their own services. The filter runs on the server.
 - Sign out by pulling the power plug of the rack, with a little shutdown animation (see below).
-- Greets the user by first name, typed like on a typewriter.
+- Greets the user by first name, typed like on a typewriter in a terminal window.
 - Works without JavaScript as a list of tiles.
 - Follows light and dark mode, "more contrast" and "reduce motion".
 
@@ -172,7 +172,7 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
 | `style.css` | Styles and animations, inlined into the page |
 | `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |
-| `intro.js` | Types the greeting and the shutdown countdown |
+| `intro.js` | Types the greeting into the terminal window and the shutdown countdown |
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 
