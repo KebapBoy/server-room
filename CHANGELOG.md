@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-08
+
 ### Added
 
 - Settings can also come from environment variables of the same name, which take precedence over `.env`; `ENV_FILE` points to another file instead of `.env`.
