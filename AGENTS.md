@@ -4,7 +4,7 @@ Instructions for AI coding agents (and humans) working on this repository. What 
 
 ## Project
 
-A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads the active proxy confs, asks Authelia which of them the signed-in user may open, maps them to containers from `data/stacks.json` and hands a filtered model to the browser, where `rack.js` draws it as an SVG server rack.
+A start page that runs inside the PHP-FPM of a SWAG container, or as a container of its own behind SWAG (`Dockerfile`). `index.php` reads the active proxy confs, asks Authelia which of them the signed-in user may open, maps them to containers from `data/stacks.json` and hands a filtered model to the browser, where `rack.js` draws it as an SVG server rack.
 
 ## Layout
 
@@ -19,7 +19,10 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
-| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` |
+| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` (`snapshot.sh` keeps its `stacks.json` current for the demo) |
+| `Dockerfile`, `.dockerignore` | The container image: Alpine with nginx and PHP-FPM, only the page files, user `nobody`, port 8080 |
+| `docker/` | `nginx.conf`, `php-fpm.conf` and `entrypoint.sh` of the image; `demo-proxy.conf` plays SWAG and Authelia in the demo |
+| `compose.yaml` | Demo: the image with the sample installation behind `demo-proxy.conf`, ports 8081 (admin) and 8082 (regular user) |
 | `docs/perf/` | Performance harness for the animated rack: `perf.sh` and `perf.mjs`, reusing the capture image and sample installation |
 | `README.md` | What it does, requirements, installation, configuration |
 | `CHANGELOG.md` | Release notes, one section per version |
@@ -27,7 +30,9 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 
 ## Conventions
 
-- No build step and no dependencies: plain PHP 8, vanilla JavaScript, one stylesheet. Keep it that way.
+- No build step and no dependencies: plain PHP 8, vanilla JavaScript, one stylesheet. Keep it that way. The container image and the demo only package the page; it must keep working inside SWAG as it is.
+- The page files are listed in four places: `Dockerfile` (`COPY`), `.dockerignore`, `capture.sh` and `perf.sh`. A new page file goes into all four.
+- Settings are read with `getenv() + load_env(ENV_FILE)`: environment variables win over `.env`. SWAG's PHP-FPM clears the environment, the image's keeps it (`clear_env = no`).
 - Identifiers and comments in English. UI texts in English.
 - Nothing in this folder is served by URL; `page.html.php` inlines CSS, JS and the favicon. New assets must be inlined the same way.
 - Access is decided on the server only. Never send the browser anything the user may not see, neither in the page nor in `/?data=1`.
@@ -40,7 +45,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 1. Add a section to `CHANGELOG.md` ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)) with the next version under [Semantic Versioning](https://semver.org/spec/v2.0.0.html): MAJOR for changes that need action from people running it (configuration, nginx, Authelia, snapshot format), MINOR for new features, PATCH for fixes, small visual tweaks and performance. Tag the commit `v<version>`. Changes without a release (`docs`, `refactor`, `chore`) go under `## [Unreleased]` at the top; the next release turns that section into its own.
 2. Update `README.md` when features, requirements, installation or configuration change. Keep it about using the project, not about one installation.
 3. Update this file when the layout or the conventions change.
-4. Check: `php -l index.php`, and look at the page in light and dark mode, narrow and wide, and play the sign-out with `/?dry`.
+4. Check: `php -l index.php`, and look at the page in light and dark mode, narrow and wide, and play the sign-out with `/?dry`, e.g. in the demo (`docker compose up --build`, which also builds the image).
 5. When the look changes, regenerate the screenshots (see below) and commit them with the change.
    When anything that moves changes (animations, the layers in `liftAnimated()`, traffic), run `docs/perf/perf.sh --check` (see "Performance").
 6. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), matching the version bump: `feat` (MINOR), `fix` (PATCH, also small visual tweaks), `perf` (PATCH), `docs`, `refactor` or `chore` (no release); `!` after the type plus a `BREAKING CHANGE:` footer for MAJOR. Use a scope where it helps, e.g. `rack`, `signout`, `intro`, `noscript`, `config`. Imperative, lower-case subject up to 72 characters; the body says what changes for the user and why.

@@ -59,7 +59,7 @@ With "more contrast" the rack is drawn as plain outlines. Without JavaScript the
 
 ## Requirements
 
-- [SWAG](https://github.com/linuxserver/docker-swag) by linuxserver.io, which serves the page with its bundled PHP-FPM (PHP 8 with the curl extension).
+- [SWAG](https://github.com/linuxserver/docker-swag) by linuxserver.io, which serves the page with its bundled PHP-FPM (PHP 8 with the curl extension), or passes it on to the page's own container (see [Running as a container](#running-as-a-container)).
 - Services published through SWAG subdomain proxy confs (`/config/nginx/proxy-confs/<name>.subdomain.conf` with `server_name <name>.*;`, `$upstream_app` and `$upstream_port`).
 - Authelia 4.38 or newer, reachable from SWAG as `http://authelia:9091` (configurable), and SWAG's `authelia-server.conf` and `authelia-location.conf` in use. A service counts as protected when its proxy conf includes `authelia-location.conf`.
 - A JSON snapshot of your compose stacks in `data/stacks.json`, refreshed by a job of your own (see [Stack snapshot](#stack-snapshot)).
@@ -109,9 +109,51 @@ With "more contrast" the rack is drawn as plain outlines. Without JavaScript the
 5. Set up a job that writes `data/stacks.json` (see [Stack snapshot](#stack-snapshot)).
 6. Reload nginx: `docker exec swag nginx -s reload`.
 
+## Running as a container
+
+Instead of inside SWAG's PHP-FPM, the page can run as a container of its own next to SWAG and Authelia: nginx and PHP-FPM on Alpine, port 8080, user `nobody`. SWAG still does the sign-in and passes the user on. The image is built from this repository; `docker compose up --build` in a clone starts a [demo](#development) with made-up data.
+
+1. Add the container to the compose stack of SWAG, in a network that reaches both SWAG and Authelia:
+
+   ```yaml
+   services:
+     server-room:
+       build: <git URL of this repository>#v1.1.0   # or the path of a clone
+       env_file: server-room.env   # the keys of .env.example
+       volumes:
+         - <swag-config>/nginx/proxy-confs:/config/nginx/proxy-confs:ro
+         - <snapshot-folder>:/app/data:ro
+       restart: unless-stopped
+   ```
+
+   - Settings come from the environment (`env_file:` or `environment:`), or from a `.env` mounted at `/app/.env`.
+   - Mount the folder that holds `stacks.json`, not the file itself: the snapshot job replaces the file by renaming, which a file mount would not see.
+   - **Do not publish the port.** The container believes the `Remote-*` headers it gets, so anyone who can reach port 8080 can claim to be any user. Only SWAG may reach it.
+2. Pass the page on to the container in the server block of your main domain, instead of the FastCGI location from the installation:
+
+   ```nginx
+   include /config/nginx/authelia-server.conf;
+
+   location = / {
+       limit_except GET {
+           deny all;
+       }
+       include /config/nginx/authelia-location.conf;
+       include /config/nginx/proxy.conf;
+       include /config/nginx/resolver.conf;
+       set $upstream_app server-room;
+       set $upstream_port 8080;
+       set $upstream_proto http;
+       proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+   }
+   ```
+
+   `authelia-location.conf` sends the signed-in user as `Remote-User`, `Remote-Name` and `Remote-Groups` and overwrites whatever the browser sent in their place.
+3. Steps 4 to 6 of the [installation](#installation) apply as they are. `docker compose ps` shows the container as healthy once nginx and PHP-FPM answer.
+
 ## Configuration
 
-All settings live in `.env` next to `index.php`; `.env.example` documents them. Environment variables of the same name take precedence, e.g. in a container; `ENV_FILE` points to another file instead of `.env`. Lists are comma-separated, maps are comma-separated `name=value` pairs, and service names are proxy conf file names without `.subdomain.conf`.
+All settings live in `.env` next to `index.php`; `.env.example` documents them. Environment variables of the same name take precedence, so a container can do without `.env` (see [Running as a container](#running-as-a-container)); `ENV_FILE` points to another file instead of `.env`. Lists are comma-separated, maps are comma-separated `name=value` pairs, and service names are proxy conf file names without `.subdomain.conf`.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -205,6 +247,7 @@ Without JavaScript or with "reduce motion" the plug is a plain link to the logou
 
 - No build step and no dependencies. Changes are live on the next request; nginx only needs a reload when its conf changes.
 - Syntax check: `docker exec swag php -l /config/www/start/index.php`
+- Demo: `docker compose up --build` runs the container image with the same made-up installation, behind a proxy that plays SWAG and Authelia, at http://localhost:8081 (admin) and http://localhost:8082 (regular user). `DEMO_ADMIN_PORT` and `DEMO_USER_PORT` change the ports.
 - `/?dry` plays the sign-out animation and reloads the page instead of signing out.
 - `docs/screenshots/capture/capture.sh` regenerates the screenshots and GIFs from a made-up installation, using only Docker (see [AGENTS.md](AGENTS.md#screenshots)).
 
@@ -231,6 +274,8 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
 | `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` |
+| `Dockerfile`, `docker/` | The container image: nginx and PHP-FPM configuration, entrypoint, and the proxy of the demo |
+| `compose.yaml` | Demo of the container image with the sample installation |
 
 See [CHANGELOG.md](CHANGELOG.md) for the history and [AGENTS.md](AGENTS.md) for contribution guidelines.
 

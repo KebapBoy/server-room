@@ -1,0 +1,9 @@
+# Only what the image needs; never .env, data/ or the screenshots
+*
+!index.php
+!page.html.php
+!style.css
+!intro.js
+!rack.js
+!favicon.svg
+!docker/
