@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SNAPSHOT_FILE` sets where the stack snapshot is read from (default: `data/stacks.json` as before).
 - The page can run as a container of its own behind SWAG and Authelia (`Dockerfile`: Alpine with nginx and PHP-FPM, user `nobody`, port 8080, health check). SWAG passes the user on as `Remote-*` headers; see "Running as a container" in the README.
 - `docker compose up --build` starts a demo with the made-up installation from the screenshots, behind a proxy that plays SWAG and Authelia.
+- A devcontainer with PHP, Node, Chromium and ffmpeg. Its dev server serves the working tree with the made-up installation, and `capture.sh` and `perf.sh` run in it without Docker.
+
+### Changed
+
+- The images of `capture.sh` and `perf.sh` use PHP 8.5, like current SWAG.
 
 ## [1.0.1] - 2026-11-08
 

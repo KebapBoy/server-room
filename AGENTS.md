@@ -19,10 +19,12 @@ A start page that runs inside the PHP-FPM of a SWAG container, or as a container
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
-| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` (`snapshot.sh` keeps its `stacks.json` current for the demo) |
+| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` (`snapshot.sh` keeps its `stacks.json` current for the demo and the dev server) |
+| `docs/screenshots/capture/Dockerfile` | Stage `capture` for `capture.sh` and `perf.sh`, stage `dev` for the devcontainer |
 | `Dockerfile`, `.dockerignore` | The container image: Alpine with nginx and PHP-FPM, only the page files, user `nobody`, port 8080 |
 | `docker/` | `nginx.conf`, `php-fpm.conf` and `entrypoint.sh` of the image; `demo-proxy.conf` plays SWAG and Authelia in the demo |
 | `compose.yaml` | Demo: the image with the sample installation behind `demo-proxy.conf`, ports 8081 (admin) and 8082 (regular user) |
+| `.devcontainer/` | `devcontainer.json` and `serve.sh`, the dev server: the working tree with the sample installation on 8081 and 8082 |
 | `docs/perf/` | Performance harness for the animated rack: `perf.sh` and `perf.mjs`, reusing the capture image and sample installation |
 | `README.md` | What it does, requirements, installation, configuration |
 | `CHANGELOG.md` | Release notes, one section per version |
@@ -30,7 +32,7 @@ A start page that runs inside the PHP-FPM of a SWAG container, or as a container
 
 ## Conventions
 
-- No build step and no dependencies: plain PHP 8, vanilla JavaScript, one stylesheet. Keep it that way. The container image and the demo only package the page; it must keep working inside SWAG as it is.
+- No build step and no dependencies: plain PHP 8, vanilla JavaScript, one stylesheet. Keep it that way. The container image, the demo and the devcontainer only package the page; it must keep working inside SWAG as it is.
 - The page files are listed in four places: `Dockerfile` (`COPY`), `.dockerignore`, `capture.sh` and `perf.sh`. A new page file goes into all four.
 - Settings are read with `getenv() + load_env(ENV_FILE)`: environment variables win over `.env`. SWAG's PHP-FPM clears the environment, the image's keeps it (`clear_env = no`).
 - Identifiers and comments in English. UI texts in English.
@@ -45,7 +47,7 @@ A start page that runs inside the PHP-FPM of a SWAG container, or as a container
 1. Add a section to `CHANGELOG.md` ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)) with the next version under [Semantic Versioning](https://semver.org/spec/v2.0.0.html): MAJOR for changes that need action from people running it (configuration, nginx, Authelia, snapshot format), MINOR for new features, PATCH for fixes, small visual tweaks and performance. Tag the commit `v<version>`. Changes without a release (`docs`, `refactor`, `chore`) go under `## [Unreleased]` at the top; the next release turns that section into its own.
 2. Update `README.md` when features, requirements, installation or configuration change. Keep it about using the project, not about one installation.
 3. Update this file when the layout or the conventions change.
-4. Check: `php -l index.php`, and look at the page in light and dark mode, narrow and wide, and play the sign-out with `/?dry`, e.g. in the demo (`docker compose up --build`, which also builds the image).
+4. Check: `php -l index.php`, and look at the page in light and dark mode, narrow and wide, and play the sign-out with `/?dry`, in the devcontainer's dev server or the demo (`docker compose up --build`, which also builds the image).
 5. When the look changes, regenerate the screenshots (see below) and commit them with the change.
    When anything that moves changes (animations, the layers in `liftAnimated()`, traffic), run `docs/perf/perf.sh --check` (see "Performance").
 6. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), matching the version bump: `feat` (MINOR), `fix` (PATCH, also small visual tweaks), `perf` (PATCH), `docs`, `refactor` or `chore` (no release); `!` after the type plus a `BREAKING CHANGE:` footer for MAJOR. Use a scope where it helps, e.g. `rack`, `signout`, `intro`, `noscript`, `config`. Imperative, lower-case subject up to 72 characters; the body says what changes for the user and why.
@@ -58,7 +60,7 @@ The images in `docs/screenshots/` show a made-up installation, never a real one.
 docs/screenshots/capture/capture.sh          # or: capture.sh shots | capture.sh gif
 ```
 
-It needs only Docker and takes about two minutes. It builds the image `server-room-capture` (Node, PHP, Chromium, ffmpeg), copies the page from the working tree with `sample/env` as `.env` into a temp dir, serves it with PHP's built-in server and records it with headless Chromium. The results overwrite the files in `docs/screenshots/`.
+It needs only Docker and takes about two minutes; in the devcontainer it runs directly, without Docker. It builds the image `server-room-capture` (Node, PHP, Chromium, ffmpeg), copies the page from the working tree with `sample/env` as `.env` into a temp dir, serves it with PHP's built-in server and records it with headless Chromium. The results overwrite the files in `docs/screenshots/`.
 
 - `sample/env`, `sample/proxy-confs/` and `sample/stacks.json` are the installation: `example.com`, a server and a NAS at `192.0.2.x`. The proxy confs go without Authelia, so `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` decides what the regular user sees.
 - `sample/router.php` stands in for Authelia: port 8081 is the admin Alex (`admins`), port 8082 the regular user Sam (`family`). Chromium maps `example.com` to localhost, so the host name in the page is `example.com` too.
@@ -75,7 +77,7 @@ Measure the animation with
 docs/perf/perf.sh [--check] [repo-dir]       # PERF_OUT=result.json docs/perf/perf.sh
 ```
 
-It needs only Docker and takes about two minutes. It reuses the image and the sample installation from the screenshot capture, copies the page from the working tree (or from `repo-dir`, e.g. a git worktree of another revision) into a temp dir and serves it with PHP's built-in server. For each scenario (desktop light and dark, tablet, phone with 4× and 6× CPU throttling, and the idle sign-out page `/?dry` on the phone) headless Chromium opens the page as the admin, waits 4 s until the traffic runs and measures 8 s: `requestAnimationFrame` intervals (median, P95, share of late and dropped frames, fps) and the main-thread time from `Performance.getMetrics` (script, style, layout, task). A Markdown table goes to stdout, JSON to `PERF_OUT`. The column "SVG anim." counts the CSS animations running on elements inside an SVG.
+It needs only Docker and takes about two minutes; in the devcontainer it runs directly, without Docker. It reuses the image and the sample installation from the screenshot capture, copies the page from the working tree (or from `repo-dir`, e.g. a git worktree of another revision) into a temp dir and serves it with PHP's built-in server. For each scenario (desktop light and dark, tablet, phone with 4× and 6× CPU throttling, and the idle sign-out page `/?dry` on the phone) headless Chromium opens the page as the admin, waits 4 s until the traffic runs and measures 8 s: `requestAnimationFrame` intervals (median, P95, share of late and dropped frames, fps) and the main-thread time from `Performance.getMetrics` (script, style, layout, task). A Markdown table goes to stdout, JSON to `PERF_OUT`. The column "SVG anim." counts the CSS animations running on elements inside an SVG.
 
 `--check` exits non-zero when that count is above 0 in any scenario, or when desktop or tablet drop more than 5 % of their frames. The count is exact and the same on every machine; the frame limit only catches gross regressions, because the frame times are noisy. The phone target is reported, not enforced.
 

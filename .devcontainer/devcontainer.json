@@ -1,0 +1,28 @@
+// Devcontainer with PHP, Node, Chromium and ffmpeg (the image of docs/screenshots/capture, stage "dev").
+// .devcontainer/serve.sh serves the working tree with the made-up installation: 8081 admin, 8082 regular user.
+{
+  "name": "server-room",
+  "build": {
+    "dockerfile": "../docs/screenshots/capture/Dockerfile",
+    "context": "../docs/screenshots/capture",
+    "target": "dev"
+  },
+  // Fixed path: /capture and /perf in the image link into it
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/server-room,type=bind",
+  "workspaceFolder": "/workspaces/server-room",
+  "remoteUser": "node",
+  "containerEnv": {
+    "SERVER_ROOM_DEVCONTAINER": "1"
+  },
+  "forwardPorts": [8081, 8082],
+  "portsAttributes": {
+    "8081": { "label": "Admin (Alex)" },
+    "8082": { "label": "Regular user (Sam)" }
+  },
+  "postStartCommand": "setsid .devcontainer/serve.sh > /tmp/serve.log 2>&1 &",
+  "customizations": {
+    "vscode": {
+      "extensions": ["bmewburn.vscode-intelephense-client"]
+    }
+  }
+}

@@ -247,6 +247,7 @@ Without JavaScript or with "reduce motion" the plug is a plain link to the logou
 
 - No build step and no dependencies. Changes are live on the next request; nginx only needs a reload when its conf changes.
 - Syntax check: `docker exec swag php -l /config/www/start/index.php`
+- Devcontainer: open the folder in VS Code and choose "Reopen in Container". It has PHP, Node, Chromium and ffmpeg and serves the working tree with the made-up installation from the screenshots: port 8081 as the admin Alex, 8082 as the regular user Sam (log in `/tmp/serve.log`). Your own `.env` is not read. `capture.sh` and `perf.sh` run in it without Docker.
 - Demo: `docker compose up --build` runs the container image with the same made-up installation, behind a proxy that plays SWAG and Authelia, at http://localhost:8081 (admin) and http://localhost:8082 (regular user). `DEMO_ADMIN_PORT` and `DEMO_USER_PORT` change the ports.
 - `/?dry` plays the sign-out animation and reloads the page instead of signing out.
 - `docs/screenshots/capture/capture.sh` regenerates the screenshots and GIFs from a made-up installation, using only Docker (see [AGENTS.md](AGENTS.md#screenshots)).
@@ -273,9 +274,10 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
-| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` |
+| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image (also the devcontainer's) and the sample installation in `sample/` |
 | `Dockerfile`, `docker/` | The container image: nginx and PHP-FPM configuration, entrypoint, and the proxy of the demo |
 | `compose.yaml` | Demo of the container image with the sample installation |
+| `.devcontainer/` | Devcontainer and its dev server `serve.sh` |
 
 See [CHANGELOG.md](CHANGELOG.md) for the history and [AGENTS.md](AGENTS.md) for contribution guidelines.
 
