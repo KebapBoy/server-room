@@ -138,8 +138,14 @@ h1.one-line { white-space: nowrap; overflow: hidden; }
 .shutdown-text { position: absolute; left: 0; margin: 0; font: 600 1rem/1.5 var(--mono); }
 .rack-stage { position: relative; margin: 0 auto; }
 .rack svg { display: block; width: 100%; height: auto; }
-/* LEDs, fans and packets, laid over the rack so only they repaint (rack.js) */
-.rack .rack-live { position: absolute; inset: 0; height: 100%; pointer-events: none; }
+/* LEDs, fans and packets, in layers over the rack so only they repaint (rack.js) */
+.rack .rack-live, .rack .rack-live .layer { position: absolute; inset: 0; height: 100%; pointer-events: none; }
+/* A bank of blinking LEDs is rasterised once and faded by the compositor; its LEDs keep
+   their blink class (and timing) for the sign-out, but blink with the bank */
+.rack .rack-live .layer-bank { will-change: opacity; }
+.rack-live .layer-bank .blink { animation: none; }
+/* Fans: one small SVG each, turning on the compositor */
+.rack .fan { position: absolute; width: auto; height: auto; overflow: visible; will-change: transform; animation: spin 1.4s linear infinite; }
 .rack-svg { font-family: var(--mono); fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .rack-svg text { fill: var(--line); stroke: none; }
 .rack-svg .title { font-size: 17px; font-weight: 700; letter-spacing: .14em; }
@@ -227,18 +233,17 @@ h1.one-line { white-space: nowrap; overflow: hidden; }
 .plug-link:hover .plug-body, .plug-link:focus-visible .plug-body { stroke: var(--accent); stroke-width: 1.8; }
 .plug-link.locked { pointer-events: none; }
 .plug-link.pulled .plug { transform: translateX(-22px); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
-.rack-svg.powered-off { opacity: .35; filter: grayscale(1); }
+.rack-svg.powered-off, .rack-live.powered-off { opacity: .35; filter: grayscale(1); }
 
 .blink { animation: blink 2s steps(1, end) infinite; }
 @keyframes blink {
   0% { opacity: 1; } 12% { opacity: .15; } 18% { opacity: 1; } 46% { opacity: .25; }
   52% { opacity: 1; } 77% { opacity: .1; } 83% { opacity: 1; }
 }
-.fan { transform-box: fill-box; transform-origin: center; animation: spin 1.4s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .blink, .fan, .caret { animation: none; }
+  .blink, .rack .fan, .caret { animation: none; }
 }
 
 /* Material: brushed aluminium in an anthracite rack. With "more contrast" the drawing

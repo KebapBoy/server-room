@@ -340,7 +340,7 @@
     const cx = x + w - 22;
     const cy = y + h / 2;
     el(g, 'circle', { cx, cy, r: 15, class: 'port' });
-    const fan = el(g, 'g', { class: 'fan' });
+    const fan = el(g, 'g', { 'data-fan': '', 'data-cx': cx, 'data-cy': cy });
     for (let i = 0; i < 4; i++) {
       const a = (i * Math.PI) / 2;
       const ex = cx + Math.cos(a) * 12;
@@ -688,7 +688,7 @@
     return [ax + (bx - ax) * f, ay + (by - ay) * f];
   }
 
-  function startTraffic(svg, routes) {
+  function startTraffic(live, routes) {
     stopTraffic();
     if (!motion.matches || !routes.length) return;
     // Positions along a route come from a table sampled once: getPointAtLength() per packet
@@ -697,7 +697,7 @@
       r.length ??= r.path.getTotalLength();
       r.samples ??= sampleRoute(r.path, r.length);
     }
-    const layer = el(svg, 'g', { class: 'packets' });
+    const layer = el(live.querySelector('.layer-packets'), 'g', { class: 'packets' });
     // Busy routes come up three times as often as quiet ones
     const copper = routes.filter((r) => !r.fiber).flatMap((r) => (r.quiet ? [r] : [r, r, r]));
     // Fibre: a dense, fast stream of light pulses in each direction at once
@@ -814,9 +814,11 @@
     for (let i = 1; i < contexts.length; i++) drawInterRack(cables, contexts[i - 1], contexts[i], routes);
     const width = drawPower(el(svg, 'g', { class: 'power' }), contexts, floor + FLOOR_H / 2);
 
-    const live = el(null, 'svg', { class: 'rack-svg rack-live', 'aria-hidden': 'true' });
-    liftAnimated(svg, live);
-    for (const node of [svg, live]) node.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const live = document.createElement('div');
+    live.className = 'rack-live';
+    live.setAttribute('aria-hidden', 'true');
+    liftAnimated(svg, live, width, height);
+    for (const node of [svg, ...live.querySelectorAll('.layer')]) node.setAttribute('viewBox', `0 0 ${width} ${height}`);
     const stage = document.createElement('div');
     stage.className = 'rack-stage';
     if (narrow) stage.style.maxWidth = Math.round(width * 1.15) + 'px';
@@ -828,18 +830,66 @@
     updateStatus();
   }
 
-  // Everything that changes all the time (LEDs, fans, the packets from startTraffic()) lives
-  // in a second SVG on top of the rack, keeping the transforms it had there. Otherwise the
-  // browser repaints the whole rack, gradients and all, on every frame.
-  function liftAnimated(svg, live) {
-    for (const node of svg.querySelectorAll('.led, .fan')) {
+  // Everything that changes all the time lives in layers above the rack, keeping the
+  // transforms it had there, so the browser never repaints the rack, gradients and all.
+  // Blinking LEDs are pre-rendered into a dozen banks; each bank blinks as a whole, so the
+  // compositor fades a finished picture instead of the main thread restyling and repainting
+  // every LED on every frame. The other LEDs share a still layer, packets get one of their
+  // own, and each fan is a small SVG that turns on the compositor.
+  function liftAnimated(svg, live, width, height) {
+    const layer = (cls) => {
+      const node = el(null, 'svg', { class: 'rack-svg layer ' + cls });
+      live.append(node);
+      return node;
+    };
+    const still = layer('layer-leds');
+    const banks = new Map();
+    const bankFor = (node) => {
+      const duration = Math.max(0.5, Math.round(parseFloat(node.style.animationDuration) * 2) / 2);
+      const key = duration + '/' + (Math.random() < 0.5 ? 0 : 1);
+      if (!banks.has(key)) {
+        const bank = layer('layer-bank blink');
+        bank.style.animationDuration = duration + 's';
+        bank.style.animationDelay = (-rand(0, duration)).toFixed(2) + 's';
+        banks.set(key, bank);
+      }
+      return banks.get(key);
+    };
+    const fans = [];
+    for (const node of svg.querySelectorAll('.led, [data-fan]')) {
       let matrix = new DOMMatrix();
       for (let up = node.parentNode; up !== svg; up = up.parentNode) {
         const t = up.transform?.baseVal.consolidate();
         if (t) matrix = DOMMatrix.fromMatrix(t.matrix).multiply(matrix);
       }
-      (matrix.isIdentity ? live : el(live, 'g', { transform: matrix.toString() })).append(node);
+      if (node.hasAttribute('data-fan')) {
+        fans.push([node, matrix]);
+        continue;
+      }
+      const target = node.classList.contains('blink') ? bankFor(node) : still;
+      (matrix.isIdentity ? target : el(target, 'g', { transform: matrix.toString() })).append(node);
     }
+    layer('layer-packets');
+    for (const [fan, matrix] of fans) liftFan(fan, matrix, live, width, height);
+  }
+
+  // A fan becomes an absolutely positioned SVG around its centre; the percentages follow
+  // the viewBox of the rack, so it scales with the stage
+  function liftFan(fan, matrix, live, width, height) {
+    const half = 13;
+    const centre = matrix.transformPoint(new DOMPoint(Number(fan.dataset.cx), Number(fan.dataset.cy)));
+    const scale = Math.hypot(matrix.a, matrix.b);
+    const box = el(null, 'svg', {
+      class: 'rack-svg fan',
+      viewBox: `${fan.dataset.cx - half} ${fan.dataset.cy - half} ${half * 2} ${half * 2}`,
+    });
+    box.style.left = (((centre.x - half * scale) / width) * 100).toFixed(3) + '%';
+    box.style.top = (((centre.y - half * scale) / height) * 100).toFixed(3) + '%';
+    box.style.width = (((half * 2 * scale) / width) * 100).toFixed(3) + '%';
+    box.style.height = (((half * 2 * scale) / height) * 100).toFixed(3) + '%';
+    fan.removeAttribute('data-fan');
+    box.append(fan);
+    live.append(box);
   }
 
   // Shows a status on every rack display and, for screen readers, in #status

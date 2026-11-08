@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Smoother rack animation, above all on phones: blinking LEDs are pre-rendered into a dozen banks that blink as a whole on the compositor, and each fan turns as a small layer of its own, so the browser no longer restyles and repaints every LED and fan on every frame. LEDs in the same bank blink in step.
+
 ### Added
 
 - Screenshots and GIFs in the README: light and dark mode, admin and restricted view, phones, sign-out, "more contrast" and the fallback without JavaScript.
