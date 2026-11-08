@@ -706,12 +706,15 @@
     let copperCount = 0;
     let next = 0;
     let frame;
+    // Stacked racks mean a phone: fewer packets, which shows little of the rack anyway
+    const maxPackets = narrow ? MAX_PACKETS * 0.4 : MAX_PACKETS;
+    const fiberGap = narrow ? FIBER_GAP_MS.map((ms) => ms * 2) : FIBER_GAP_MS;
     const send = (route, forward, now, speed, cls, r) => {
       const dot = el(layer, 'circle', { r, class: cls });
       active.push({ route, dot, forward, start: now, duration: (route.length / speed) * 1000 });
     };
     const tick = (now) => {
-      if (copper.length && now >= next && copperCount < MAX_PACKETS) {
+      if (copper.length && now >= next && copperCount < maxPackets) {
         send(pick(copper), Math.random() < 0.5, now, rand(110, 220), 'packet', 4.2);
         copperCount++;
         next = now + rand(60, 240);
@@ -719,7 +722,7 @@
       for (const s of streams) {
         if (now < s.next) continue;
         send(s.route, s.forward, now, rand(520, 680), 'packet light', 4.3);
-        s.next = now + rand(...FIBER_GAP_MS);
+        s.next = now + rand(...fiberGap);
       }
       for (let i = active.length - 1; i >= 0; i--) {
         const p = active[i];

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Smoother rack animation, above all on phones: blinking LEDs are pre-rendered into a dozen banks that blink as a whole on the compositor, and each fan turns as a small layer of its own, so the browser no longer restyles and repaints every LED and fan on every frame. LEDs in the same bank blink in step.
+- Phones (stacked racks) send fewer packets: at most 16 at once on copper and half as many light pulses on fibre.
 
 ### Added
 
