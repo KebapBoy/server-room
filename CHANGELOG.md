@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Screenshots and GIFs in the README: light and dark mode, admin and restricted view, phones, sign-out, "more contrast" and the fallback without JavaScript.
 - `docs/screenshots/capture/capture.sh` regenerates them with only Docker from a made-up installation at `example.com` in `docs/screenshots/capture/sample/`.
-- `docs/perf/perf.sh` measures frame rate and main-thread cost of the animated rack on desktop, tablet and a throttled phone, with only Docker.
+- `docs/perf/perf.sh` measures frame rate and main-thread cost of the animated rack on desktop, tablet and a throttled phone, with only Docker. `--check` fails on CSS animations inside the SVG, which the browser has to repaint on every frame.
 
 ## [1.0.0] - 2026-11-08
 
