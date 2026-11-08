@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Settings can also come from environment variables of the same name, which take precedence over `.env`; `ENV_FILE` points to another file instead of `.env`.
+- `SNAPSHOT_FILE` sets where the stack snapshot is read from (default: `data/stacks.json` as before).
+
 ## [1.0.1] - 2026-11-08
 
 ### Added

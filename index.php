@@ -3,19 +3,19 @@
 // according to Authelia, drawn as a server rack grouped by compose stacks.
 // Services come from the active SWAG proxy confs, stacks from data/stacks.json
 // (written by a separate host job, see README). GET /?data=1 returns the filtered model as JSON.
-// Everything specific to an installation is read from .env next to this file (see .env.example).
+// Everything specific to an installation is read from .env next to this file (see .env.example);
+// real environment variables of the same name take precedence, e.g. in a container.
 
-const ENV_FILE = __DIR__ . '/.env';
-const SNAPSHOT = __DIR__ . '/data/stacks.json';
+define('ENV_FILE', getenv('ENV_FILE') ?: __DIR__ . '/.env');
 
 // Docker networks that do not mean two containers talk to each other
 const IGNORED_NETWORKS = ['host', 'none', 'bridge'];
 
-$env = load_env(ENV_FILE);
+$env = getenv() + load_env(ENV_FILE);
 if (($env['BASE_DOMAIN'] ?? '') === '') {
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
-    echo "Not configured: copy .env.example to .env and set BASE_DOMAIN.\n";
+    echo "Not configured: set BASE_DOMAIN in .env (see .env.example) or in the environment.\n";
     exit;
 }
 
@@ -23,6 +23,7 @@ define('BASE_DOMAIN', $env['BASE_DOMAIN']);
 define('PROXY_CONFS', $env['PROXY_CONFS'] ?? '/config/nginx/proxy-confs/*.subdomain.conf');
 define('AUTHELIA_AUTHZ', rtrim($env['AUTHELIA_URL'] ?? 'http://authelia:9091', '/') . '/api/authz/auth-request');
 define('LOGOUT_URL', $env['LOGOUT_URL'] ?? 'https://auth.' . BASE_DOMAIN . '/logout');
+define('SNAPSHOT', $env['SNAPSHOT_FILE'] ?? __DIR__ . '/data/stacks.json');
 define('SNAPSHOT_MAX_AGE', (int) ($env['SNAPSHOT_MAX_AGE'] ?? 180));
 define('SKIPPED', env_list($env, 'SKIPPED_SERVICES', 'auth'));
 define('ADMIN_GROUP', $env['ADMIN_GROUP'] ?? 'admins');

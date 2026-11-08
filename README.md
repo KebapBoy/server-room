@@ -111,7 +111,7 @@ With "more contrast" the rack is drawn as plain outlines. Without JavaScript the
 
 ## Configuration
 
-All settings live in `.env` next to `index.php`; `.env.example` documents them. Lists are comma-separated, maps are comma-separated `name=value` pairs, and service names are proxy conf file names without `.subdomain.conf`.
+All settings live in `.env` next to `index.php`; `.env.example` documents them. Environment variables of the same name take precedence, e.g. in a container; `ENV_FILE` points to another file instead of `.env`. Lists are comma-separated, maps are comma-separated `name=value` pairs, and service names are proxy conf file names without `.subdomain.conf`.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -125,6 +125,7 @@ All settings live in `.env` next to `index.php`; `.env.example` documents them. 
 | `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` |  | The same per service, e.g. `jellyfin=admins\|family` |
 | `SERVICE_CONTAINERS` |  | Container for services whose proxy conf has no usable upstream, e.g. `dashboard=swag` |
 | `SERVICE_PATHS` |  | Start path for services whose UI does not live at `/`, e.g. `pihole=/admin/` |
+| `SNAPSHOT_FILE` | `data/stacks.json` next to `index.php` | Stack snapshot (see [Stack snapshot](#stack-snapshot)) |
 | `SNAPSHOT_MAX_AGE` | `180` | Seconds after which the stack snapshot counts as stale |
 
 Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`, `LOW_BATTERY`, `FIBER_GAP_MS`).
