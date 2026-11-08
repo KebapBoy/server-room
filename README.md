@@ -205,6 +205,7 @@ Without JavaScript or with "reduce motion" the plug is a plain link to the logou
 - No build step and no dependencies. Changes are live on the next request; nginx only needs a reload when its conf changes.
 - Syntax check: `docker exec swag php -l /config/www/start/index.php`
 - `/?dry` plays the sign-out animation and reloads the page instead of signing out.
+- `docs/screenshots/capture/capture.sh` regenerates the screenshots and GIFs from a made-up installation, using only Docker (see [AGENTS.md](AGENTS.md#screenshots)).
 
 Show the mapping without a browser, as an admin:
 
@@ -228,6 +229,7 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
+| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` |
 
 See [CHANGELOG.md](CHANGELOG.md) for the history and [AGENTS.md](AGENTS.md) for contribution guidelines.
 

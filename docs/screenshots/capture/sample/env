@@ -1,0 +1,10 @@
+# .env of the made-up installation shown in the screenshots. Every proxy conf goes without
+# Authelia, so the groups below decide who sees what and no Authelia is needed.
+BASE_DOMAIN=example.com
+LOGOUT_URL=https://auth.example.com/logout
+PROXY_CONFS=/capture/sample/proxy-confs/*.subdomain.conf
+ADMIN_GROUP=admins
+GROUPS_WITHOUT_AUTHELIA=admins
+GROUPS_WITHOUT_AUTHELIA_PER_SERVICE=jellyfin=admins|family, nextcloud=admins|family, immich=admins|family, homeassistant=admins|family, printer=admins|family
+SERVICE_CONTAINERS=dashboard=swag
+SNAPSHOT_MAX_AGE=180

@@ -1,0 +1,396 @@
+{
+  "generated": 1767225600,
+  "environments": [
+    {
+      "id": 1,
+      "name": "server",
+      "ip": "192.0.2.10",
+      "online": true,
+      "stacks": [
+        {
+          "name": "proxy",
+          "containers": [
+            {
+              "name": "proxy-swag-1",
+              "service": "swag",
+              "state": "running",
+              "health": "healthy",
+              "ports": [
+                443,
+                80
+              ],
+              "networks": [
+                "proxy"
+              ]
+            },
+            {
+              "name": "proxy-authelia-1",
+              "service": "authelia",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "proxy",
+                "auth"
+              ]
+            },
+            {
+              "name": "proxy-redis-1",
+              "service": "redis",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "auth"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "media",
+          "containers": [
+            {
+              "name": "media-jellyfin-1",
+              "service": "jellyfin",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "proxy",
+                "media"
+              ]
+            },
+            {
+              "name": "media-sonarr-1",
+              "service": "sonarr",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "proxy",
+                "media"
+              ]
+            },
+            {
+              "name": "media-radarr-1",
+              "service": "radarr",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "proxy",
+                "media"
+              ]
+            },
+            {
+              "name": "media-prowlarr-1",
+              "service": "prowlarr",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "media"
+              ]
+            },
+            {
+              "name": "media-qbittorrent-1",
+              "service": "qbittorrent",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "proxy",
+                "media"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "cloud",
+          "containers": [
+            {
+              "name": "cloud-nextcloud-1",
+              "service": "nextcloud",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "proxy",
+                "cloud"
+              ]
+            },
+            {
+              "name": "cloud-mariadb-1",
+              "service": "mariadb",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "cloud"
+              ]
+            },
+            {
+              "name": "cloud-redis-1",
+              "service": "redis",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "cloud"
+              ]
+            },
+            {
+              "name": "cloud-cron-1",
+              "service": "cron",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "cloud"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "home",
+          "containers": [
+            {
+              "name": "home-homeassistant-1",
+              "service": "homeassistant",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "host"
+              ]
+            },
+            {
+              "name": "home-mosquitto-1",
+              "service": "mosquitto",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "home"
+              ]
+            },
+            {
+              "name": "home-zigbee2mqtt-1",
+              "service": "zigbee2mqtt",
+              "state": "running",
+              "health": "unhealthy",
+              "ports": [],
+              "networks": [
+                "home"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "monitoring",
+          "containers": [
+            {
+              "name": "monitoring-grafana-1",
+              "service": "grafana",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "proxy",
+                "monitoring"
+              ]
+            },
+            {
+              "name": "monitoring-prometheus-1",
+              "service": "prometheus",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "monitoring"
+              ]
+            },
+            {
+              "name": "monitoring-node-exporter-1",
+              "service": "node-exporter",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "monitoring"
+              ]
+            },
+            {
+              "name": "monitoring-uptime-kuma-1",
+              "service": "uptime-kuma",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "proxy"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "vault",
+          "containers": [
+            {
+              "name": "vault-vaultwarden-1",
+              "service": "vaultwarden",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "proxy"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "docs",
+          "containers": [
+            {
+              "name": "docs-paperless-1",
+              "service": "paperless",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "proxy",
+                "docs"
+              ]
+            },
+            {
+              "name": "docs-postgres-1",
+              "service": "postgres",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "docs"
+              ]
+            },
+            {
+              "name": "docs-redis-1",
+              "service": "redis",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "docs"
+              ]
+            },
+            {
+              "name": "docs-tika-1",
+              "service": "tika",
+              "state": "exited",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "docs"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "nas",
+      "ip": "192.0.2.20",
+      "online": true,
+      "stacks": [
+        {
+          "name": "photos",
+          "containers": [
+            {
+              "name": "photos-immich-server-1",
+              "service": "immich-server",
+              "state": "running",
+              "health": "healthy",
+              "ports": [
+                2283
+              ],
+              "networks": [
+                "photos"
+              ]
+            },
+            {
+              "name": "photos-immich-ml-1",
+              "service": "immich-ml",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "photos"
+              ]
+            },
+            {
+              "name": "photos-postgres-1",
+              "service": "postgres",
+              "state": "running",
+              "health": "healthy",
+              "ports": [],
+              "networks": [
+                "photos"
+              ]
+            },
+            {
+              "name": "photos-redis-1",
+              "service": "redis",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "photos"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "sync",
+          "containers": [
+            {
+              "name": "sync-syncthing-1",
+              "service": "syncthing",
+              "state": "running",
+              "health": "healthy",
+              "ports": [
+                8384
+              ],
+              "networks": [
+                "sync"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "backup",
+          "containers": [
+            {
+              "name": "backup-duplicati-1",
+              "service": "duplicati",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "backup"
+              ]
+            },
+            {
+              "name": "backup-restic-rest-1",
+              "service": "restic-rest",
+              "state": "running",
+              "health": null,
+              "ports": [],
+              "networks": [
+                "backup"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
