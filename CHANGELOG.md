@@ -7,16 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Smoother rack animation, above all on phones: blinking LEDs are pre-rendered into a dozen banks that blink as a whole on the compositor, and each fan turns as a small layer of its own, so the browser no longer restyles and repaints every LED and fan on every frame. LEDs in the same bank blink in step.
-- Phones (stacked racks) send fewer packets: at most 16 at once on copper and half as many light pulses on fibre.
+## [1.0.1] - 2026-11-08
 
 ### Added
 
 - Screenshots and GIFs in the README: light and dark mode, admin and restricted view, phones, sign-out, "more contrast" and the fallback without JavaScript.
 - `docs/screenshots/capture/capture.sh` regenerates them with only Docker from a made-up installation at `example.com` in `docs/screenshots/capture/sample/`.
 - `docs/perf/perf.sh` measures frame rate and main-thread cost of the animated rack on desktop, tablet and a throttled phone, with only Docker. `--check` fails on CSS animations inside the SVG, which the browser has to repaint on every frame.
+
+### Changed
+
+- Smoother rack animation, above all on phones: blinking LEDs are pre-rendered into a dozen banks that blink as a whole on the compositor, and each fan turns as a small layer of its own, so the browser no longer restyles and repaints every LED and fan on every frame. LEDs in the same bank blink in step.
+- Phones (stacked racks) send fewer packets: at most 16 at once on copper and half as many light pulses on fibre.
 
 ## [1.0.0] - 2026-11-08
 
