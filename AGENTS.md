@@ -20,6 +20,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
 | `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
 | `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` |
+| `docs/perf/` | Performance harness for the animated rack: `perf.sh` and `perf.mjs`, reusing the capture image and sample installation |
 | `README.md` | What it does, requirements, installation, configuration |
 | `CHANGELOG.md` | Release notes, one section per version |
 | `AGENTS.md` | This file |
@@ -59,3 +60,18 @@ It needs only Docker and takes about two minutes. It builds the image `server-ro
 - Desktop shots are 1440×900 and full page; phone shots are 390×844 at 2× and only the first screen. GIFs are 960 px wide at 10 fps; keep `signout.gif` around 2 MB.
 - Look at every image before committing: traffic and blinking LEDs are random, so the images differ on every run. Only commit them when the look changed.
 - When a feature, the snapshot format or the configuration changes, update the sample so the screenshots show it. Add a screenshot to `capture.mjs` and the README's Screenshots section for a new view. Keep everything fictional: `example.com`, `192.0.2.x`, generic names.
+
+## Performance
+
+Measure the animation with
+
+```sh
+docs/perf/perf.sh [repo-dir]                 # PERF_OUT=result.json docs/perf/perf.sh
+```
+
+It needs only Docker and takes about two minutes. It reuses the image and the sample installation from the screenshot capture, copies the page from the working tree (or from `repo-dir`, e.g. a git worktree of another revision) into a temp dir and serves it with PHP's built-in server. For each scenario (desktop light and dark, tablet, phone with 4× and 6× CPU throttling, and the idle sign-out page `/?dry` on the phone) headless Chromium opens the page as the admin, waits 4 s until the traffic runs and measures 8 s: `requestAnimationFrame` intervals (median, P95, share of late and dropped frames, fps) and the main-thread time from `Performance.getMetrics` (script, style, layout, task). A Markdown table goes to stdout, JSON to `PERF_OUT`.
+
+- Target: on the phone with 4× throttling P95 frame interval ≤ 16.7 ms and < 5 % dropped frames; on desktop and tablet no dropped frames.
+- Frames are capped at 60 fps like a real display; `PERF_UNCAPPED=1` lifts the cap to show headroom, but then the main thread runs flat out and the task times are not comparable.
+- Headless Chromium renders in software, so the absolute numbers are pessimistic and noisy. Compare runs of the same machine with each other, before and after a change, and run twice when a difference is small.
+- Put the table into the commit message of a `perf` change.
