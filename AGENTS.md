@@ -42,6 +42,7 @@ A start page that runs inside the PHP-FPM of a SWAG container. `index.php` reads
 3. Update this file when the layout or the conventions change.
 4. Check: `php -l index.php`, and look at the page in light and dark mode, narrow and wide, and play the sign-out with `/?dry`.
 5. When the look changes, regenerate the screenshots (see below) and commit them with the change.
+   When anything that moves changes (animations, the layers in `liftAnimated()`, traffic), run `docs/perf/perf.sh --check` (see "Performance").
 6. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), matching the version bump: `feat` (MINOR), `fix` (PATCH, also small visual tweaks), `perf` (PATCH), `docs`, `refactor` or `chore` (no release); `!` after the type plus a `BREAKING CHANGE:` footer for MAJOR. Use a scope where it helps, e.g. `rack`, `signout`, `intro`, `noscript`, `config`. Imperative, lower-case subject up to 72 characters; the body says what changes for the user and why.
 
 ## Screenshots
@@ -66,12 +67,25 @@ It needs only Docker and takes about two minutes. It builds the image `server-ro
 Measure the animation with
 
 ```sh
-docs/perf/perf.sh [repo-dir]                 # PERF_OUT=result.json docs/perf/perf.sh
+docs/perf/perf.sh [--check] [repo-dir]       # PERF_OUT=result.json docs/perf/perf.sh
 ```
 
-It needs only Docker and takes about two minutes. It reuses the image and the sample installation from the screenshot capture, copies the page from the working tree (or from `repo-dir`, e.g. a git worktree of another revision) into a temp dir and serves it with PHP's built-in server. For each scenario (desktop light and dark, tablet, phone with 4× and 6× CPU throttling, and the idle sign-out page `/?dry` on the phone) headless Chromium opens the page as the admin, waits 4 s until the traffic runs and measures 8 s: `requestAnimationFrame` intervals (median, P95, share of late and dropped frames, fps) and the main-thread time from `Performance.getMetrics` (script, style, layout, task). A Markdown table goes to stdout, JSON to `PERF_OUT`.
+It needs only Docker and takes about two minutes. It reuses the image and the sample installation from the screenshot capture, copies the page from the working tree (or from `repo-dir`, e.g. a git worktree of another revision) into a temp dir and serves it with PHP's built-in server. For each scenario (desktop light and dark, tablet, phone with 4× and 6× CPU throttling, and the idle sign-out page `/?dry` on the phone) headless Chromium opens the page as the admin, waits 4 s until the traffic runs and measures 8 s: `requestAnimationFrame` intervals (median, P95, share of late and dropped frames, fps) and the main-thread time from `Performance.getMetrics` (script, style, layout, task). A Markdown table goes to stdout, JSON to `PERF_OUT`. The column "SVG anim." counts the CSS animations running on elements inside an SVG.
+
+`--check` exits non-zero when that count is above 0 in any scenario, or when desktop or tablet drop more than 5 % of their frames. The count is exact and the same on every machine; the frame limit only catches gross regressions, because the frame times are noisy. The phone target is reported, not enforced.
 
 - Target: on the phone with 4× throttling P95 frame interval ≤ 16.7 ms and < 5 % dropped frames; on desktop and tablet no dropped frames.
 - Frames are capped at 60 fps like a real display; `PERF_UNCAPPED=1` lifts the cap to show headroom, but then the main thread runs flat out and the task times are not comparable.
 - Headless Chromium renders in software, so the absolute numbers are pessimistic and noisy. Compare runs of the same machine with each other, before and after a change, and run twice when a difference is small.
 - Put the table into the commit message of a `perf` change.
+
+### Rendering rules
+
+What keeps the rack smooth, learnt by measuring (details in the `perf(rack)` commits):
+
+- Never animate an element inside an SVG with CSS. Chromium cannot hand such animations to the compositor, so each one restyles and repaints its whole SVG on every frame, filters included. `--check` fails on them.
+- What moves or blinks gets a layer of its own (an outer `<svg>` or an HTML element) and animates only `opacity` or `transform` of that layer, with `will-change`. The compositor then fades or turns a picture rasterised once. `liftAnimated()` builds these layers: blinking LEDs in banks of the same blink timing (LEDs in one bank blink in step), the other LEDs in a still layer, the packets in a layer of their own, each fan as a small SVG.
+- Filters such as `drop-shadow()` are fine in a layer that is not repainted; in a layer that changes every frame they are paid for every frame.
+- Keep per-frame work small: the packets move by `setAttribute` in their own layer; narrow layouts (phones) send fewer of them.
+- Tried and dropped, both slower on the phone: packets on a `<canvas>` (drawing in software costs the main thread more than moving a few SVG circles) and LED halos selected with `:has()` (style recalculation doubled).
+- Still open: on a phone with 4× CPU throttling the page reaches about 44 fps, not 60; style recalculation is still the largest cost there.
