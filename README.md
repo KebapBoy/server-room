@@ -2,6 +2,50 @@
 
 A start page for self-hosted services behind [SWAG](https://github.com/linuxserver/docker-swag) and [Authelia](https://www.authelia.com/). It shows every signed-in user exactly the services Authelia lets them open, drawn as a server rack: one rack per Docker host, one chassis per compose stack, one module per container. New proxy confs and changes to your stacks show up by themselves; access rights are maintained in Authelia only.
 
+![The greeting is typed into a terminal window while traffic runs between the containers](docs/screenshots/intro.gif)
+
+## Screenshots
+
+All screenshots show a made-up installation at `example.com`: a server and a NAS with a few typical self-hosted stacks.
+
+### Light and dark
+
+The page follows the system's colour scheme. Green LEDs mean running, yellow unhealthy, red stopped; modules with an arrow link to their service.
+
+| Light | Dark |
+|---|---|
+| ![Admin view in light mode: two racks with all stacks and containers](docs/screenshots/desktop-light.png) | ![Admin view in dark mode](docs/screenshots/desktop-dark.png) |
+
+### Admins and everyone else
+
+Admins see every stack and container, also those without a domain, such as databases. Everyone else only gets the containers of the services Authelia lets them open. The rest of each chassis stays blank and gives away nothing, and the filter runs on the server.
+
+| Admin | Regular user |
+|---|---|
+| ![Admin view: all 24 containers in the server rack](docs/screenshots/desktop-dark.png) | ![Restricted view: only jellyfin, nextcloud, homeassistant, immich and the printer](docs/screenshots/desktop-user.png) |
+
+### Phones
+
+On narrow screens the racks are stacked.
+
+| Admin, light | Admin, dark | Regular user |
+|---|---|---|
+| <img src="docs/screenshots/mobile-light.png" alt="Phone, light mode" width="260"> | <img src="docs/screenshots/mobile-dark.png" alt="Phone, dark mode" width="260"> | <img src="docs/screenshots/mobile-user.png" alt="Phone, restricted view" width="260"> |
+
+### Signing out
+
+Pull the plug to sign out: the UPS units count down on battery, then power everything down before the page goes to Authelia's logout. Plugging back in before the battery is empty cancels it.
+
+![Pulling the plug: countdown, LEDs going out and the rack going dark](docs/screenshots/signout.gif)
+
+### More contrast and no JavaScript
+
+With "more contrast" the rack is drawn as plain outlines. Without JavaScript the services are shown as a list of tiles.
+
+![More contrast: the rack drawn as outlines](docs/screenshots/desktop-contrast.png)
+
+![Without JavaScript: one tile per service](docs/screenshots/noscript.png)
+
 ## Features
 
 - Status LEDs per container (green running, yellow unhealthy, created or paused, red stopped), filler units for shorter racks and animated pseudo traffic between containers that share a Docker network.
@@ -183,6 +227,7 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 | `intro.js` | Types the greeting into the terminal window and the shutdown countdown |
 | `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
 | `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
+| `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
 
 See [CHANGELOG.md](CHANGELOG.md) for the history and [AGENTS.md](AGENTS.md) for contribution guidelines.
 
