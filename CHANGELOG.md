@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Screenshots and GIFs in the README: light and dark mode, admin and restricted view, phones, sign-out, "more contrast" and the fallback without JavaScript.
+- `docs/screenshots/capture/capture.sh` regenerates them with only Docker from a made-up installation at `example.com` in `docs/screenshots/capture/sample/`.
+
 ## [1.0.0] - 2026-11-08
 
 ### Added
