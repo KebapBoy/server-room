@@ -11,6 +11,7 @@ const WARMUP_MS = 4000;
 const MEASURE_MS = 8000;
 const FRAME_MS = 1000 / 60;
 const LATE_MS = 17.5; // a frame counts as late above this (16.7 ms plus timer jitter)
+const CHECK_DROPPED_PCT = 5; // --check: desktop and tablet may drop at most this share of frames (runs are noisy)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- sample snapshot -------------------------------------------------------
@@ -81,6 +82,16 @@ async function measure(b, sc) {
   await page.s('Page.navigate', { url: sc.url });
   await sleep(WARMUP_MS);
 
+  // CSS animations on elements inside an SVG never run on the compositor: each one restyles
+  // and repaints its SVG on every frame. Only layers of their own (an outer <svg>, HTML)
+  // may animate, and only opacity or transform.
+  const { result: svgAnim } = await page.s('Runtime.evaluate', { returnByValue: true, expression: `
+    JSON.stringify(document.getAnimations()
+      .map((a) => a.playState === 'running' && a.effect?.target)
+      .filter((t) => t instanceof SVGElement && t.ownerSVGElement)
+      .map((t) => t.tagName + '.' + [...t.classList].join('.')))` });
+  const svgAnimations = JSON.parse(svgAnim.value);
+
   await page.s('Runtime.evaluate', { expression: `
     window.__t = []; window.__run = true;
     (function tick(t) { window.__t.push(t); if (window.__run) requestAnimationFrame(tick); })(performance.now());
@@ -100,7 +111,8 @@ async function measure(b, sc) {
   const dropped = iv.reduce((n, d) => n + Math.max(0, Math.round(d / FRAME_MS - 1)), 0);
   const cpuMs = (k) => round(((after[k] ?? 0) - (before[k] ?? 0)) * 1000, 0);
   return {
-    name: sc.name, frames: iv.length,
+    name: sc.name, frames: iv.length, svgAnimations: svgAnimations.length,
+    svgAnimationTargets: [...new Set(svgAnimations)].slice(0, 5),
     medianMs: round(median(sorted)), p95Ms: round(pct(sorted, 0.95)), maxMs: round(sorted.at(-1)),
     latePct: round(100 * iv.filter((d) => d > LATE_MS).length / iv.length),
     droppedPct: round(100 * dropped / (iv.length + dropped)),
@@ -144,13 +156,28 @@ fs.writeFileSync(`${OUT}/perf.json`, JSON.stringify(results, null, 2));
 
 const cols = [['scenario', 'name'], ['frames', 'frames'], ['fps', 'fps'], ['median ms', 'medianMs'], ['P95 ms', 'p95Ms'],
   ['max ms', 'maxMs'], ['>16.7 ms %', 'latePct'], ['dropped %', 'droppedPct'],
-  ['script ms', 'scriptMs'], ['style ms', 'styleMs'], ['layout ms', 'layoutMs'], ['task ms', 'taskMs']];
+  ['script ms', 'scriptMs'], ['style ms', 'styleMs'], ['layout ms', 'layoutMs'], ['task ms', 'taskMs'],
+  ['SVG anim.', 'svgAnimations']];
 console.log(`| ${cols.map((c) => c[0]).join(' | ')} |`);
 console.log(`|${cols.map((c, i) => (i ? '---:' : '---')).join('|')}|`);
 for (const r of results) console.log(`| ${cols.map((c) => r[c[1]]).join(' | ')} |`);
 console.log(`\nWarm-up ${WARMUP_MS / 1000} s, then ${MEASURE_MS / 1000} s. Script/style/layout/task are main-thread ms summed over the window.`);
+console.log('SVG anim.: CSS animations running on elements inside an SVG, which the main thread has to draw.');
+
+// --check: fail on what does not depend on the machine (animations inside an SVG) and on a
+// gross regression on desktop and tablet; the phone target is shown, not enforced
+const failures = [];
+if (process.env.PERF_CHECK) {
+  for (const r of results) {
+    if (r.svgAnimations) failures.push(`${r.name}: ${r.svgAnimations} animations inside an SVG, e.g. ${r.svgAnimationTargets.join(', ')}`);
+    if (!r.name.startsWith('phone') && r.droppedPct > CHECK_DROPPED_PCT) failures.push(`${r.name}: ${r.droppedPct} % dropped frames (limit ${CHECK_DROPPED_PCT} %)`);
+  }
+  const phone = results.find((r) => r.name === 'phone 3x, cpu 4x');
+  console.log(`\nPhone target (P95 ≤ 16.7 ms, < 5 % dropped): ${phone.p95Ms <= 16.7 && phone.droppedPct < 5 ? 'met' : 'not met'}, not enforced.`);
+  console.log(failures.length ? `\nCheck failed:\n- ${failures.join('\n- ')}` : '\nCheck passed.');
+}
 
 b.close();
 chrome.kill();
 server.kill();
-process.exit(0);
+process.exit(failures.length ? 1 : 0);
