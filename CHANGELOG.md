@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Devcontainer: Claude Code is installed (native installer, plus the VS Code extension) and keeps its settings and sign-in in a volume, so it stays signed in across rebuilds; your user-level `~/.claude/CLAUDE.md` from the host is mounted in read-only.
+
 ## [1.1.0] - 2026-11-08
 
 ### Added

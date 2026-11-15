@@ -1,5 +1,7 @@
 // Devcontainer with PHP, Node, Chromium and ffmpeg (the image of docs/screenshots/capture, stage "dev").
 // .devcontainer/serve.sh serves the working tree with the made-up installation: 8081 admin, 8082 regular user.
+// Claude Code keeps its settings and sign-in in the volume at ~/.claude, so they survive rebuilds;
+// your user-level ~/.claude/CLAUDE.md from the host is mounted in read-only.
 {
   "name": "server-room",
   "build": {
@@ -11,6 +13,14 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/server-room,type=bind",
   "workspaceFolder": "/workspaces/server-room",
   "remoteUser": "node",
+  // Runs on the host before the container starts: copies your user-level ~/.claude/CLAUDE.md (or an
+  // empty file if there is none) to .devcontainer/host/, which is mounted read-only as Claude Code's
+  // CLAUDE.md in the container. cp overwrites in place, so the mount picks up changes on every start.
+  "initializeCommand": "mkdir -p .devcontainer/host && { cp ~/.claude/CLAUDE.md .devcontainer/host/CLAUDE.md 2>/dev/null || : > .devcontainer/host/CLAUDE.md; }",
+  "mounts": [
+    "source=server-room-claude-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=${localWorkspaceFolder}/.devcontainer/host/CLAUDE.md,target=/home/node/.claude/CLAUDE.md,type=bind,readonly"
+  ],
   "containerEnv": {
     "SERVER_ROOM_DEVCONTAINER": "1"
   },
@@ -22,7 +32,7 @@
   "postStartCommand": "setsid .devcontainer/serve.sh > /tmp/serve.log 2>&1 &",
   "customizations": {
     "vscode": {
-      "extensions": ["bmewburn.vscode-intelephense-client"]
+      "extensions": ["bmewburn.vscode-intelephense-client", "anthropic.claude-code"]
     }
   }
 }
