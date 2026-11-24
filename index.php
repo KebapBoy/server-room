@@ -1,4 +1,5 @@
 <?php
+
 // Start page for a SWAG domain: shows every service the logged-in Authelia user may access
 // according to Authelia, drawn as a server rack grouped by compose stacks.
 // Services come from the active SWAG proxy confs, stacks from data/stacks.json
@@ -33,7 +34,7 @@ define('ADMIN_GROUP', $env['ADMIN_GROUP'] ?? 'admins');
 define('GROUPS_WITHOUT_AUTHELIA', env_list($env, 'GROUPS_WITHOUT_AUTHELIA', 'admins'));
 define('GROUPS_WITHOUT_AUTHELIA_PER_SERVICE', array_map(
     fn($groups) => array_values(array_filter(array_map('trim', explode('|', $groups)), 'strlen')),
-    env_map($env, 'GROUPS_WITHOUT_AUTHELIA_PER_SERVICE')
+    env_map($env, 'GROUPS_WITHOUT_AUTHELIA_PER_SERVICE'),
 ));
 
 // Services whose proxy conf has no usable upstream: conf name => compose service (also the label)
@@ -81,7 +82,7 @@ function read_services(): array
         $name = basename($file, '.subdomain.conf');
         $active = implode("\n", array_filter(
             file($file, FILE_IGNORE_NEW_LINES),
-            fn($line) => !preg_match('/^\s*#/', $line)
+            fn($line) => !preg_match('/^\s*#/', $line),
         ));
         if (!preg_match_all('/^\s*server_name\s+([a-z0-9-]+)\.\*\s*;/mi', $active, $matches)) {
             continue;
@@ -314,7 +315,7 @@ $cookie = session_cookie();
 
 $checked = $cookie === null ? [] : query_authelia(
     array_column(array_filter($services, fn($s) => $s['authelia']), 'host'),
-    $cookie
+    $cookie,
 );
 
 $visible = array_filter($services, function ($s) use ($checked, $groups) {

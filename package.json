@@ -1,0 +1,9 @@
+{
+    "name": "server-room",
+    "private": true,
+    "type": "module",
+    "description": "Development tools only (formatter, linter); the page itself needs no Node",
+    "devDependencies": {
+        "prettier": "3.10.1"
+    }
+}

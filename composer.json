@@ -1,0 +1,15 @@
+{
+    "name": "kebapboy/server-room",
+    "description": "Development tools only (formatter, static analysis); the page needs no Composer packages",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.5"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95"
+    }
+}

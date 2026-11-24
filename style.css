@@ -1,297 +1,968 @@
 :root {
-  color-scheme: light dark;
-  --bg: #f3f4f1; --panel: #f9f9f6; --line: #2a3037; --muted: #7b838c; --faint: rgba(42, 48, 55, .22);
-  --accent: #1f6feb; --ok: #17a34a; --warn: #d4a106; --bad: #dc3d34; --act: #2f81f7; --amber: #f08c00;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    color-scheme: light dark;
+    --bg: #f3f4f1;
+    --panel: #f9f9f6;
+    --line: #2a3037;
+    --muted: #7b838c;
+    --faint: rgba(42, 48, 55, 0.22);
+    --accent: #1f6feb;
+    --ok: #17a34a;
+    --warn: #d4a106;
+    --bad: #dc3d34;
+    --act: #2f81f7;
+    --amber: #f08c00;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e1115; --panel: #12161b; --line: #c4ccd5; --muted: #78818b; --faint: rgba(196, 204, 213, .2);
-    --accent: #58a6ff; --ok: #3fb950; --warn: #e3b341; --bad: #f85149; --act: #58a6ff; --amber: #ffa11a;
-  }
+    :root {
+        --bg: #0e1115;
+        --panel: #12161b;
+        --line: #c4ccd5;
+        --muted: #78818b;
+        --faint: rgba(196, 204, 213, 0.2);
+        --accent: #58a6ff;
+        --ok: #3fb950;
+        --warn: #e3b341;
+        --bad: #f85149;
+        --act: #58a6ff;
+        --amber: #ffa11a;
+    }
 }
 /* Rack materials: aluminium faceplates and drive sleds, a light grey (dark: anthracite)
    steel rack, black plastic */
 :root {
-  --metal-hi: #fbfcfd; --metal: #e1e5e9; --metal-lo: #c2c9d0;
-  --sled-hi: #f0f2f4; --sled-lo: #d2d7dc;
-  --steel-hi: #e4e7e4; --steel: #cbd0cc; --steel-lo: #a4aba6;  /* light grey rack, RAL 7035 */
-  --plate: #343a41; --edge-strong: #4d555e;
-  --edge: #8c959e; --engrave: #5d666f; --cable: #2d3339; --blank: rgba(42, 48, 55, .05);
-  --plastic: #1d2227; --display: #142019; --display-text: #8ff0a4; --plate-text: #e8ecf0;
-  --brush: rgba(255, 255, 255, .6);
-  --tag: #f2cf3c; --tag-edge: #b8941a; --tag-text: #2a2306;
-  --patch-yellow: #f0c419; --patch-red: #d93a32; --patch-green: #2e9e4f; --patch-blue: #2671d6;
-  --patch-fiber: #20c4d8; --patch-fiber-boot: #e6dcc3;
-  --patch-edge: rgba(0, 0, 0, .35); --patch-shine: rgba(255, 255, 255, .45);
+    --metal-hi: #fbfcfd;
+    --metal: #e1e5e9;
+    --metal-lo: #c2c9d0;
+    --sled-hi: #f0f2f4;
+    --sled-lo: #d2d7dc;
+    --steel-hi: #e4e7e4;
+    --steel: #cbd0cc;
+    --steel-lo: #a4aba6; /* light grey rack, RAL 7035 */
+    --plate: #343a41;
+    --edge-strong: #4d555e;
+    --edge: #8c959e;
+    --engrave: #5d666f;
+    --cable: #2d3339;
+    --blank: rgba(42, 48, 55, 0.05);
+    --plastic: #1d2227;
+    --display: #142019;
+    --display-text: #8ff0a4;
+    --plate-text: #e8ecf0;
+    --brush: rgba(255, 255, 255, 0.6);
+    --tag: #f2cf3c;
+    --tag-edge: #b8941a;
+    --tag-text: #2a2306;
+    --patch-yellow: #f0c419;
+    --patch-red: #d93a32;
+    --patch-green: #2e9e4f;
+    --patch-blue: #2671d6;
+    --patch-fiber: #20c4d8;
+    --patch-fiber-boot: #e6dcc3;
+    --patch-edge: rgba(0, 0, 0, 0.35);
+    --patch-shine: rgba(255, 255, 255, 0.45);
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --metal-hi: #4b535c; --metal: #383f47; --metal-lo: #2a3036;
-    --sled-hi: #3b424b; --sled-lo: #2b3138;
-    --steel-hi: #2c3238; --steel: #1c2025; --steel-lo: #0d0f12;
-    --plate: #1c2025; --edge-strong: #7d8791;
-    --edge: #5b646e; --engrave: #9aa3ad; --cable: #5f6973; --blank: rgba(0, 0, 0, .2);
-    --plastic: #0b0d10; --display: #0c1510; --display-text: #7fe39a; --plate-text: #d9dfe5;
-    --brush: rgba(255, 255, 255, .05);
-    --tag: #d8b52f; --tag-edge: #8f7417; --tag-text: #1d1803;
-    --patch-yellow: #d6ae1a; --patch-red: #c2352e; --patch-green: #2b8c47; --patch-blue: #2e6cc4;
-    --patch-fiber: #1aa9bb; --patch-fiber-boot: #c2b89f;
-    --patch-edge: rgba(0, 0, 0, .55); --patch-shine: rgba(255, 255, 255, .3);
-  }
+    :root {
+        --metal-hi: #4b535c;
+        --metal: #383f47;
+        --metal-lo: #2a3036;
+        --sled-hi: #3b424b;
+        --sled-lo: #2b3138;
+        --steel-hi: #2c3238;
+        --steel: #1c2025;
+        --steel-lo: #0d0f12;
+        --plate: #1c2025;
+        --edge-strong: #7d8791;
+        --edge: #5b646e;
+        --engrave: #9aa3ad;
+        --cable: #5f6973;
+        --blank: rgba(0, 0, 0, 0.2);
+        --plastic: #0b0d10;
+        --display: #0c1510;
+        --display-text: #7fe39a;
+        --plate-text: #d9dfe5;
+        --brush: rgba(255, 255, 255, 0.05);
+        --tag: #d8b52f;
+        --tag-edge: #8f7417;
+        --tag-text: #1d1803;
+        --patch-yellow: #d6ae1a;
+        --patch-red: #c2352e;
+        --patch-green: #2b8c47;
+        --patch-blue: #2e6cc4;
+        --patch-fiber: #1aa9bb;
+        --patch-fiber-boot: #c2b89f;
+        --patch-edge: rgba(0, 0, 0, 0.55);
+        --patch-shine: rgba(255, 255, 255, 0.3);
+    }
 }
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--line); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main { padding: 1.5rem 1rem 1rem; }
-a { color: var(--accent); }
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--line);
+    font:
+        15px/1.4 system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+}
+main {
+    padding: 1.5rem 1rem 1rem;
+}
+a {
+    color: var(--accent);
+}
 
 /* Greeting and countdown in a terminal window, light or dark with the page. With "more
    contrast" it turns into plain outlines like the rack drawing. The title bar (data-title)
    and its three buttons are drawn by ::before. */
 :root {
-  --term-bg: #fbfbf9; --term-bar-hi: #eceef0; --term-bar: #dfe2e5; --term-edge: #c3c8cd;
-  --term-text: #24292f; --term-dim: #6e7781; --term-prompt: #1a7f37; --term-accent: #0969da;
-  --term-btn-1: #ff5f57; --term-btn-2: #febc2e; --term-btn-3: #28c840;
-  --term-glow: transparent; --term-prompt-glow: transparent; --term-scan: rgba(0, 0, 0, .02);
-  --term-shadow: 0 6px 18px rgba(42, 48, 55, .14); --term-inset: rgba(0, 0, 0, .04);
-  --term-border: 1px; --term-bar-h: 1.7rem;
+    --term-bg: #fbfbf9;
+    --term-bar-hi: #eceef0;
+    --term-bar: #dfe2e5;
+    --term-edge: #c3c8cd;
+    --term-text: #24292f;
+    --term-dim: #6e7781;
+    --term-prompt: #1a7f37;
+    --term-accent: #0969da;
+    --term-btn-1: #ff5f57;
+    --term-btn-2: #febc2e;
+    --term-btn-3: #28c840;
+    --term-glow: transparent;
+    --term-prompt-glow: transparent;
+    --term-scan: rgba(0, 0, 0, 0.02);
+    --term-shadow: 0 6px 18px rgba(42, 48, 55, 0.14);
+    --term-inset: rgba(0, 0, 0, 0.04);
+    --term-border: 1px;
+    --term-bar-h: 1.7rem;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --term-bg: #0d1117; --term-bar-hi: #323942; --term-bar: #2a3038; --term-edge: #3b434c;
-    --term-text: #d3dae1; --term-dim: #8b949e; --term-prompt: #3fb950; --term-accent: #58a6ff;
-    --term-glow: rgba(211, 218, 225, .3); --term-prompt-glow: rgba(63, 185, 80, .4); --term-scan: rgba(255, 255, 255, .025);
-    --term-shadow: 0 8px 22px rgba(0, 0, 0, .28); --term-inset: rgba(0, 0, 0, .55);
-  }
+    :root {
+        --term-bg: #0d1117;
+        --term-bar-hi: #323942;
+        --term-bar: #2a3038;
+        --term-edge: #3b434c;
+        --term-text: #d3dae1;
+        --term-dim: #8b949e;
+        --term-prompt: #3fb950;
+        --term-accent: #58a6ff;
+        --term-glow: rgba(211, 218, 225, 0.3);
+        --term-prompt-glow: rgba(63, 185, 80, 0.4);
+        --term-scan: rgba(255, 255, 255, 0.025);
+        --term-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+        --term-inset: rgba(0, 0, 0, 0.55);
+    }
 }
 @media (prefers-contrast: more) {
-  :root {
-    --term-bg: var(--bg); --term-bar-hi: var(--bg); --term-bar: var(--bg); --term-edge: var(--line);
-    --term-text: var(--line); --term-dim: var(--line); --term-prompt: var(--line); --term-accent: var(--accent);
-    --term-btn-1: var(--line); --term-btn-2: var(--line); --term-btn-3: var(--line);
-    --term-glow: transparent; --term-prompt-glow: transparent; --term-scan: transparent;
-    --term-shadow: none; --term-inset: transparent; --term-border: 1.5px;
-  }
+    :root {
+        --term-bg: var(--bg);
+        --term-bar-hi: var(--bg);
+        --term-bar: var(--bg);
+        --term-edge: var(--line);
+        --term-text: var(--line);
+        --term-dim: var(--line);
+        --term-prompt: var(--line);
+        --term-accent: var(--accent);
+        --term-btn-1: var(--line);
+        --term-btn-2: var(--line);
+        --term-btn-3: var(--line);
+        --term-glow: transparent;
+        --term-prompt-glow: transparent;
+        --term-scan: transparent;
+        --term-shadow: none;
+        --term-inset: transparent;
+        --term-border: 1.5px;
+    }
 }
 .terminal {
-  /* Fixed width, so the window does not grow while the text is typed */
-  position: relative; width: min(100%, 36rem);
-  padding: calc(var(--term-bar-h) + .55rem) .8rem .6rem; border: var(--term-border) solid var(--term-edge); border-radius: 7px;
-  background: var(--term-bg); color: var(--term-text); word-break: break-all;  /* wraps at the edge, mid-word, like a terminal */
-  text-shadow: 0 0 5px var(--term-glow);
-  box-shadow: var(--term-shadow), inset 0 0 2rem var(--term-inset);
+    /* Fixed width, so the window does not grow while the text is typed */
+    position: relative;
+    width: min(100%, 36rem);
+    padding: calc(var(--term-bar-h) + 0.55rem) 0.8rem 0.6rem;
+    border: var(--term-border) solid var(--term-edge);
+    border-radius: 7px;
+    background: var(--term-bg);
+    color: var(--term-text);
+    word-break: break-all; /* wraps at the edge, mid-word, like a terminal */
+    text-shadow: 0 0 5px var(--term-glow);
+    box-shadow:
+        var(--term-shadow),
+        inset 0 0 2rem var(--term-inset);
 }
 .terminal::before {
-  content: attr(data-title); position: absolute; inset: 0 0 auto; height: var(--term-bar-h);
-  padding: 0 2.9rem; border-bottom: var(--term-border) solid var(--term-edge); border-radius: 6px 6px 0 0;
-  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: center; text-shadow: none;
-  font: 500 .7rem/var(--term-bar-h) var(--mono); color: var(--term-dim);
-  background:
-    radial-gradient(circle at .75rem 50%, var(--term-btn-1) .2rem, transparent .23rem),
-    radial-gradient(circle at 1.4rem 50%, var(--term-btn-2) .2rem, transparent .23rem),
-    radial-gradient(circle at 2.05rem 50%, var(--term-btn-3) .2rem, transparent .23rem),
-    linear-gradient(var(--term-bar-hi), var(--term-bar));
+    content: attr(data-title);
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--term-bar-h);
+    padding: 0 2.9rem;
+    border-bottom: var(--term-border) solid var(--term-edge);
+    border-radius: 6px 6px 0 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: center;
+    text-shadow: none;
+    font: 500 0.7rem/var (--term-bar-h) var(--mono);
+    color: var(--term-dim);
+    background:
+        radial-gradient(circle at 0.75rem 50%, var(--term-btn-1) 0.2rem, transparent 0.23rem),
+        radial-gradient(circle at 1.4rem 50%, var(--term-btn-2) 0.2rem, transparent 0.23rem),
+        radial-gradient(circle at 2.05rem 50%, var(--term-btn-3) 0.2rem, transparent 0.23rem),
+        linear-gradient(var(--term-bar-hi), var(--term-bar));
 }
 /* Faint scanlines over the screen */
 .terminal::after {
-  content: ''; position: absolute; inset: var(--term-bar-h) 0 0; border-radius: 0 0 6px 6px; pointer-events: none;
-  background: repeating-linear-gradient(transparent 0 2px, var(--term-scan) 2px 3px);
+    content: "";
+    position: absolute;
+    inset: var(--term-bar-h) 0 0;
+    border-radius: 0 0 6px 6px;
+    pointer-events: none;
+    background: repeating-linear-gradient(transparent 0 2px, var(--term-scan) 2px 3px);
 }
-.terminal .line:first-child::before { content: '$ '; color: var(--term-prompt); text-shadow: 0 0 5px var(--term-prompt-glow); }
-.terminal b { color: var(--term-accent); }
+.terminal .line:first-child::before {
+    content: "$ ";
+    color: var(--term-prompt);
+    text-shadow: 0 0 5px var(--term-prompt-glow);
+}
+.terminal b {
+    color: var(--term-accent);
+}
 
 /* Greeting: a terminal centred above the racks */
-.intro { margin: 0 auto 1rem; }
-h1 { margin: 0; font: 600 1.15rem/1.5 var(--mono); }
-.caret { display: inline-block; width: .55em; height: 1.1em; margin-left: 1px; vertical-align: text-bottom; background: currentColor; animation: caret 1s steps(1, end) infinite; }
-@keyframes caret { 50% { opacity: 0; } }
+.intro {
+    margin: 0 auto 1rem;
+}
+h1 {
+    margin: 0;
+    font: 600 1.15rem/1.5 var(--mono);
+}
+.caret {
+    display: inline-block;
+    width: 0.55em;
+    height: 1.1em;
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    background: currentColor;
+    animation: caret 1s steps(1, end) infinite;
+}
+@keyframes caret {
+    50% {
+        opacity: 0;
+    }
+}
 /* Countdown in the greeting (intro.js): one line that scrolls instead of wrapping, so the
    racks do not move */
-h1.one-line { white-space: nowrap; overflow: hidden; }
+h1.one-line {
+    white-space: nowrap;
+    overflow: hidden;
+}
 /* The visible status lives on the rack displays; this copy is for screen readers */
-.status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
 
 /* Without JS there is no plug, so the logout link sits below the tiles on the right */
-.logout { max-width: 1500px; margin: 1.5rem auto 0; text-align: right; font: .9rem var(--mono); }
-.fallback { list-style: none; max-width: 1500px; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; }
+.logout {
+    max-width: 1500px;
+    margin: 1.5rem auto 0;
+    text-align: right;
+    font: 0.9rem var(--mono);
+}
+.fallback {
+    list-style: none;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 0.6rem;
+}
 
 /* <noscript> tiles drawn like the rack modules */
 .tile {
-  display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 1.6rem .3rem;
-  padding: .45rem .55rem .4rem; border: 1.3px solid var(--line); border-radius: 3px;
-  background: var(--bg); color: var(--line); text-decoration: none; font: .78rem/1 var(--mono);
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 1.6rem 0.3rem;
+    padding: 0.45rem 0.55rem 0.4rem;
+    border: 1.3px solid var(--line);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--line);
+    text-decoration: none;
+    font: 0.78rem/1 var(--mono);
 }
-.tile .led { width: 6px; height: 6px; border-radius: 50%; border: .8px solid var(--muted); background: var(--bg); }
-.tile .led.ok { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 2px var(--ok); }
-.tile .led.warn { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 2px var(--warn); }
-.tile .led.bad { background: var(--bad); border-color: var(--bad); box-shadow: 0 0 2px var(--bad); }
-.tile .led.act { background: var(--act); border-color: var(--act); box-shadow: 0 0 2px var(--act); }
-.tile .vents { grid-column: 3 / 5; justify-self: end; width: 13px; height: 9px; background: repeating-linear-gradient(90deg, var(--muted) 0 1px, transparent 1px 4px); }
-.tile-label { grid-column: 1 / 4; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.tile-arrow { width: 8px; height: 8px; fill: none; stroke: var(--line); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
-.tile:hover, .tile:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 .5px var(--accent); color: var(--accent); outline: none; }
-.tile:hover .tile-arrow, .tile:focus-visible .tile-arrow { stroke: var(--accent); }
+.tile .led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: 0.8px solid var(--muted);
+    background: var(--bg);
+}
+.tile .led.ok {
+    background: var(--ok);
+    border-color: var(--ok);
+    box-shadow: 0 0 2px var(--ok);
+}
+.tile .led.warn {
+    background: var(--warn);
+    border-color: var(--warn);
+    box-shadow: 0 0 2px var(--warn);
+}
+.tile .led.bad {
+    background: var(--bad);
+    border-color: var(--bad);
+    box-shadow: 0 0 2px var(--bad);
+}
+.tile .led.act {
+    background: var(--act);
+    border-color: var(--act);
+    box-shadow: 0 0 2px var(--act);
+}
+.tile .vents {
+    grid-column: 3 / 5;
+    justify-self: end;
+    width: 13px;
+    height: 9px;
+    background: repeating-linear-gradient(90deg, var(--muted) 0 1px, transparent 1px 4px);
+}
+.tile-label {
+    grid-column: 1 / 4;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.tile-arrow {
+    width: 8px;
+    height: 8px;
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.tile:hover,
+.tile:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.5px var(--accent);
+    color: var(--accent);
+    outline: none;
+}
+.tile:hover .tile-arrow,
+.tile:focus-visible .tile-arrow {
+    stroke: var(--accent);
+}
 
 /* Rack drawing: outlines only, colour is reserved for LEDs and traffic */
 /* Countdown below the stacked racks, left of the plug (rack.js) */
-.rack { position: relative; }
-.shutdown-text { position: absolute; left: 0; margin: 0; font: 600 1rem/1.5 var(--mono); }
-.rack-stage { position: relative; margin: 0 auto; }
-.rack svg { display: block; width: 100%; height: auto; }
+.rack {
+    position: relative;
+}
+.shutdown-text {
+    position: absolute;
+    left: 0;
+    margin: 0;
+    font: 600 1rem/1.5 var(--mono);
+}
+.rack-stage {
+    position: relative;
+    margin: 0 auto;
+}
+.rack svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
 /* LEDs, fans and packets, in layers over the rack so only they repaint (rack.js) */
-.rack .rack-live, .rack .rack-live .layer { position: absolute; inset: 0; height: 100%; pointer-events: none; }
+.rack .rack-live,
+.rack .rack-live .layer {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    pointer-events: none;
+}
 /* A bank of blinking LEDs is rasterised once and faded by the compositor; its LEDs keep
    their blink class (and timing) for the sign-out, but blink with the bank */
-.rack .rack-live .layer-bank { will-change: opacity; }
-.rack-live .layer-bank .blink { animation: none; }
+.rack .rack-live .layer-bank {
+    will-change: opacity;
+}
+.rack-live .layer-bank .blink {
+    animation: none;
+}
 /* Fans: one small SVG each, turning on the compositor */
-.rack .fan { position: absolute; width: auto; height: auto; overflow: visible; will-change: transform; animation: spin 1.4s linear infinite; }
-.rack-svg { font-family: var(--mono); fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.rack-svg text { fill: var(--line); stroke: none; }
-.rack-svg .title { font-size: 17px; font-weight: 700; letter-spacing: .14em; }
-.rack-svg .lcd-text { font-size: 8px; letter-spacing: .06em; }
-.lcd { stroke: var(--line); stroke-width: .9; fill: var(--bg); }
-.lcd-link.warn .lcd-status { fill: var(--warn); }
-.lcd-link[href] { cursor: pointer; }
-.lcd-link[href]:hover .lcd, .lcd-link[href]:focus-visible .lcd { stroke: var(--accent); }
-.lcd-link:focus { outline: none; }
-.rack-svg .stack-name { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
-.rack-svg .label { font-size: 9.5px; }
-.rack-svg .small { font-size: 7px; letter-spacing: .08em; fill: var(--muted); }
-.rack-svg .port-num { font-size: 4.6px; letter-spacing: 0; }
-.rack-svg .unum { font-size: 6px; fill: var(--muted); }
-.rack-svg .pill-text { font-size: 8px; }
+.rack .fan {
+    position: absolute;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    will-change: transform;
+    animation: spin 1.4s linear infinite;
+}
+.rack-svg {
+    font-family: var(--mono);
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.rack-svg text {
+    fill: var(--line);
+    stroke: none;
+}
+.rack-svg .title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+}
+.rack-svg .lcd-text {
+    font-size: 8px;
+    letter-spacing: 0.06em;
+}
+.lcd {
+    stroke: var(--line);
+    stroke-width: 0.9;
+    fill: var(--bg);
+}
+.lcd-link.warn .lcd-status {
+    fill: var(--warn);
+}
+.lcd-link[href] {
+    cursor: pointer;
+}
+.lcd-link[href]:hover .lcd,
+.lcd-link[href]:focus-visible .lcd {
+    stroke: var(--accent);
+}
+.lcd-link:focus {
+    outline: none;
+}
+.rack-svg .stack-name {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+.rack-svg .label {
+    font-size: 9.5px;
+}
+.rack-svg .small {
+    font-size: 7px;
+    letter-spacing: 0.08em;
+    fill: var(--muted);
+}
+.rack-svg .port-num {
+    font-size: 4.6px;
+    letter-spacing: 0;
+}
+.rack-svg .unum {
+    font-size: 6px;
+    fill: var(--muted);
+}
+.rack-svg .pill-text {
+    font-size: 8px;
+}
 
-.frame { stroke: var(--line); stroke-width: 1.4; fill: var(--bg); }
-.rail { stroke: var(--line); stroke-width: .9; }
-.hole { stroke: var(--muted); stroke-width: .7; }
-.face { stroke: var(--line); stroke-width: 1.1; fill: var(--panel); }
-.brush { display: none; }
-.screw { stroke: var(--muted); stroke-width: .8; fill: var(--bg); }
-.vent, .blade { stroke: var(--muted); stroke-width: .9; }
-.slot { stroke: var(--muted); stroke-width: 2.2; opacity: .55; }
-.port { stroke: var(--line); stroke-width: .9; fill: var(--bg); }
-.ring, .tray { stroke: var(--line); stroke-width: 1.1; }
-.arrow { stroke: var(--line); stroke-width: 1.2; }
+.frame {
+    stroke: var(--line);
+    stroke-width: 1.4;
+    fill: var(--bg);
+}
+.rail {
+    stroke: var(--line);
+    stroke-width: 0.9;
+}
+.hole {
+    stroke: var(--muted);
+    stroke-width: 0.7;
+}
+.face {
+    stroke: var(--line);
+    stroke-width: 1.1;
+    fill: var(--panel);
+}
+.brush {
+    display: none;
+}
+.screw {
+    stroke: var(--muted);
+    stroke-width: 0.8;
+    fill: var(--bg);
+}
+.vent,
+.blade {
+    stroke: var(--muted);
+    stroke-width: 0.9;
+}
+.slot {
+    stroke: var(--muted);
+    stroke-width: 2.2;
+    opacity: 0.55;
+}
+.port {
+    stroke: var(--line);
+    stroke-width: 0.9;
+    fill: var(--bg);
+}
+.ring,
+.tray {
+    stroke: var(--line);
+    stroke-width: 1.1;
+}
+.arrow {
+    stroke: var(--line);
+    stroke-width: 1.2;
+}
 
-.module-body { stroke: var(--line); stroke-width: 1; fill: var(--bg); }
-.blank-body { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 3 3; }
-.module-link { cursor: pointer; }
-.module-link:focus { outline: none; }
-.module-link .module-body { stroke-width: 1.3; }
-.module-link:hover .module-body, .module-link:focus-visible .module-body { stroke: var(--accent); stroke-width: 1.8; }
-.module-link:hover text, .module-link:focus-visible text { fill: var(--accent); }
-.module-link:hover .arrow, .module-link:focus-visible .arrow { stroke: var(--accent); }
-.pill { stroke: var(--line); stroke-width: 1; fill: var(--bg); }
-.pill-link:hover .pill, .pill-link:focus-visible .pill { stroke: var(--accent); }
-.pill-link:hover text, .pill-link:focus-visible text { fill: var(--accent); }
-.pill-link:focus { outline: none; }
+.module-body {
+    stroke: var(--line);
+    stroke-width: 1;
+    fill: var(--bg);
+}
+.blank-body {
+    stroke: var(--faint);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+}
+.module-link {
+    cursor: pointer;
+}
+.module-link:focus {
+    outline: none;
+}
+.module-link .module-body {
+    stroke-width: 1.3;
+}
+.module-link:hover .module-body,
+.module-link:focus-visible .module-body {
+    stroke: var(--accent);
+    stroke-width: 1.8;
+}
+.module-link:hover text,
+.module-link:focus-visible text {
+    fill: var(--accent);
+}
+.module-link:hover .arrow,
+.module-link:focus-visible .arrow {
+    stroke: var(--accent);
+}
+.pill {
+    stroke: var(--line);
+    stroke-width: 1;
+    fill: var(--bg);
+}
+.pill-link:hover .pill,
+.pill-link:focus-visible .pill {
+    stroke: var(--accent);
+}
+.pill-link:hover text,
+.pill-link:focus-visible text {
+    fill: var(--accent);
+}
+.pill-link:focus {
+    outline: none;
+}
 
-.trace { stroke: var(--faint); stroke-width: 1; }
-.cable { stroke: var(--line); stroke-width: 1.2; opacity: .7; }
+.trace {
+    stroke: var(--faint);
+    stroke-width: 1;
+}
+.cable {
+    stroke: var(--line);
+    stroke-width: 1.2;
+    opacity: 0.7;
+}
 /* Patch cables: plain outlines here, coloured jackets with the materials below */
-.patch-core { stroke: var(--line); stroke-width: 1.4; }
-.patch-edge, .patch-shine { display: none; }
-.patch-boot { fill: var(--bg); stroke: var(--line); stroke-width: .9; }
-.patch-fiber .patch-core { stroke-width: 1; stroke-dasharray: 4 2; }
-.sfp-module, .lc-plug, .lc-clip { fill: var(--bg); stroke: var(--line); stroke-width: .6; }
-.sfp-bail { stroke: var(--line); stroke-width: .6; }
-.fiber-strand { stroke: var(--line); stroke-width: .6; stroke-dasharray: 2 1; }
-.channel { stroke: var(--faint); stroke-width: 1; }
+.patch-core {
+    stroke: var(--line);
+    stroke-width: 1.4;
+}
+.patch-edge,
+.patch-shine {
+    display: none;
+}
+.patch-boot {
+    fill: var(--bg);
+    stroke: var(--line);
+    stroke-width: 0.9;
+}
+.patch-fiber .patch-core {
+    stroke-width: 1;
+    stroke-dasharray: 4 2;
+}
+.sfp-module,
+.lc-plug,
+.lc-clip {
+    fill: var(--bg);
+    stroke: var(--line);
+    stroke-width: 0.6;
+}
+.sfp-bail {
+    stroke: var(--line);
+    stroke-width: 0.6;
+}
+.fiber-strand {
+    stroke: var(--line);
+    stroke-width: 0.6;
+    stroke-dasharray: 2 1;
+}
+.channel {
+    stroke: var(--faint);
+    stroke-width: 1;
+}
 /* Packets: a dot with a glow around it, drawn by the gradients g-packet and g-light */
-:root { --packet-core: var(--accent); --packet-ring: var(--accent); --packet-glow: var(--accent); --light-core: var(--patch-fiber); }
-.packet { fill: url(#g-packet); }
-.packet.light { fill: url(#g-light); }
+:root {
+    --packet-core: var(--accent);
+    --packet-ring: var(--accent);
+    --packet-glow: var(--accent);
+    --light-core: var(--patch-fiber);
+}
+.packet {
+    fill: url(#g-packet);
+}
+.packet.light {
+    fill: url(#g-light);
+}
 
-.led { stroke: var(--muted); stroke-width: .8; fill: var(--bg); }
-.led.ok { fill: var(--ok); stroke: var(--ok); filter: drop-shadow(0 0 1.5px var(--ok)); }
-.led.warn { fill: var(--warn); stroke: var(--warn); filter: drop-shadow(0 0 1.5px var(--warn)); }
-.led.bad { fill: var(--bad); stroke: var(--bad); filter: drop-shadow(0 0 1.5px var(--bad)); }
-.led.act { fill: var(--act); stroke: var(--act); filter: drop-shadow(0 0 1.5px var(--act)); }
-.led.amber { fill: var(--amber); stroke: var(--amber); filter: drop-shadow(0 0 1.5px var(--amber)); }
-.led.flash { opacity: 1 !important; fill: var(--accent); stroke: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
-.led.amber.flash { fill: var(--amber); stroke: var(--amber); filter: drop-shadow(0 0 3px var(--amber)); }
+.led {
+    stroke: var(--muted);
+    stroke-width: 0.8;
+    fill: var(--bg);
+}
+.led.ok {
+    fill: var(--ok);
+    stroke: var(--ok);
+    filter: drop-shadow(0 0 1.5px var(--ok));
+}
+.led.warn {
+    fill: var(--warn);
+    stroke: var(--warn);
+    filter: drop-shadow(0 0 1.5px var(--warn));
+}
+.led.bad {
+    fill: var(--bad);
+    stroke: var(--bad);
+    filter: drop-shadow(0 0 1.5px var(--bad));
+}
+.led.act {
+    fill: var(--act);
+    stroke: var(--act);
+    filter: drop-shadow(0 0 1.5px var(--act));
+}
+.led.amber {
+    fill: var(--amber);
+    stroke: var(--amber);
+    filter: drop-shadow(0 0 1.5px var(--amber));
+}
+.led.flash {
+    opacity: 1 !important;
+    fill: var(--accent);
+    stroke: var(--accent);
+    filter: drop-shadow(0 0 3px var(--accent));
+}
+.led.amber.flash {
+    fill: var(--amber);
+    stroke: var(--amber);
+    filter: drop-shadow(0 0 3px var(--amber));
+}
 
 /* UPS battery gauge */
-.cell { fill: var(--faint); stroke: none; }
-.cell.on { fill: var(--ok); }
-.battery.low .cell.on { fill: var(--warn); }
-.battery.crit .cell.on { fill: var(--bad); }
+.cell {
+    fill: var(--faint);
+    stroke: none;
+}
+.cell.on {
+    fill: var(--ok);
+}
+.battery.low .cell.on {
+    fill: var(--warn);
+}
+.battery.crit .cell.on {
+    fill: var(--bad);
+}
 
 /* Power strip and wall socket; pulling the plug logs out */
-.pin { stroke: var(--line); stroke-width: 1.6; }
-.plug-body { stroke: var(--line); stroke-width: 1.3; fill: var(--bg); }
-/* Marker tag on the plug cord carrying the label */
-.tag { fill: var(--bg); stroke: var(--line); stroke-width: .7; }
-.tag-strap { stroke: var(--line); stroke-width: 1.2; }
-.rack-svg .tag-text { font-size: 6px; font-weight: 700; letter-spacing: .06em; }
-.hit { fill: transparent; stroke: none; }
-.plug { transition: transform .2s ease-out; }
-.plug-link { cursor: pointer; }
-.plug-link:focus { outline: none; }
-.plug-link:hover .plug, .plug-link:focus-visible .plug { transform: translateX(-4px); }
-.plug-link:hover .plug-body, .plug-link:focus-visible .plug-body { stroke: var(--accent); stroke-width: 1.8; }
-.plug-link.locked { pointer-events: none; }
-.plug-link.pulled .plug { transform: translateX(-22px); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
-.rack-svg.powered-off, .rack-live.powered-off { opacity: .35; filter: grayscale(1); }
-
-.blink { animation: blink 2s steps(1, end) infinite; }
-@keyframes blink {
-  0% { opacity: 1; } 12% { opacity: .15; } 18% { opacity: 1; } 46% { opacity: .25; }
-  52% { opacity: 1; } 77% { opacity: .1; } 83% { opacity: 1; }
+.pin {
+    stroke: var(--line);
+    stroke-width: 1.6;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+.plug-body {
+    stroke: var(--line);
+    stroke-width: 1.3;
+    fill: var(--bg);
+}
+/* Marker tag on the plug cord carrying the label */
+.tag {
+    fill: var(--bg);
+    stroke: var(--line);
+    stroke-width: 0.7;
+}
+.tag-strap {
+    stroke: var(--line);
+    stroke-width: 1.2;
+}
+.rack-svg .tag-text {
+    font-size: 6px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+.hit {
+    fill: transparent;
+    stroke: none;
+}
+.plug {
+    transition: transform 0.2s ease-out;
+}
+.plug-link {
+    cursor: pointer;
+}
+.plug-link:focus {
+    outline: none;
+}
+.plug-link:hover .plug,
+.plug-link:focus-visible .plug {
+    transform: translateX(-4px);
+}
+.plug-link:hover .plug-body,
+.plug-link:focus-visible .plug-body {
+    stroke: var(--accent);
+    stroke-width: 1.8;
+}
+.plug-link.locked {
+    pointer-events: none;
+}
+.plug-link.pulled .plug {
+    transform: translateX(-22px);
+    transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.rack-svg.powered-off,
+.rack-live.powered-off {
+    opacity: 0.35;
+    filter: grayscale(1);
+}
+
+.blink {
+    animation: blink 2s steps(1, end) infinite;
+}
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    12% {
+        opacity: 0.15;
+    }
+    18% {
+        opacity: 1;
+    }
+    46% {
+        opacity: 0.25;
+    }
+    52% {
+        opacity: 1;
+    }
+    77% {
+        opacity: 0.1;
+    }
+    83% {
+        opacity: 1;
+    }
+}
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .blink, .rack .fan, .caret { animation: none; }
+    .blink,
+    .rack .fan,
+    .caret {
+        animation: none;
+    }
 }
 
 /* Material: brushed aluminium in an anthracite rack. With "more contrast" the drawing
    stays in the plain outlines above; every other setting, "less" included, gets metal. */
 @media not all and (prefers-contrast: more) {
-  .frame { fill: url(#g-frame); stroke: var(--steel-lo); }
-  .rail { fill: var(--steel); stroke: var(--steel-lo); }
-  .hole { fill: var(--steel-lo); stroke: var(--steel-hi); }
-  .face { fill: url(#g-face); stroke: var(--edge); }
-  .brush { display: inline; fill: url(#p-brush); stroke: none; pointer-events: none; }
-  .brush-line { stroke: var(--brush); stroke-width: .5; }
-  .screw { fill: url(#g-screw); stroke: var(--edge); }
-  .vent, .blade { stroke: var(--edge); }
-  .slot { stroke: var(--steel-lo); opacity: .5; }
-  .ring, .tray { stroke: var(--edge-strong); }
-  .port, .plug-body { fill: var(--plastic); stroke: var(--edge); }
-  .plate { fill: var(--plate); stroke: var(--steel-lo); }
-  .rack-svg .title { fill: var(--plate-text); }
-  .display, .lcd { fill: var(--display); stroke: var(--edge); }
-  .rack-svg .on-display, .rack-svg .lcd-text { fill: var(--display-text); }
-  .rack-svg .small { fill: var(--engrave); }
-  .module-body, .pill { fill: url(#g-sled); stroke: var(--edge); }
-  .module-link .module-body { stroke: var(--edge-strong); }
-  .blank-body { fill: var(--blank); stroke: var(--edge); }
-  .cable { stroke: var(--cable); opacity: .9; }
-  .patch-yellow { --patch: var(--patch-yellow); }
-  .patch-red { --patch: var(--patch-red); }
-  .patch-green { --patch: var(--patch-green); }
-  .patch-blue { --patch: var(--patch-blue); }
-  .patch-fiber { --patch: var(--patch-fiber); }
-  .patch-edge { display: inline; stroke: var(--patch-edge); stroke-width: 3; }
-  .patch-core { stroke: var(--patch); stroke-width: 2.2; }
-  .patch-shine { display: inline; stroke: var(--patch-shine); stroke-width: .6; transform: translate(-.4px, -.4px); }
-  .patch-boot { fill: var(--patch); stroke: var(--patch-edge); stroke-width: .7; }
-  /* Fibre: thin aqua (OM3/OM4) zip cord, LC plugs with a light boot */
-  .patch-fiber .patch-edge { stroke-width: 1.9; }
-  .patch-fiber .patch-core { stroke-width: 1.3; stroke-dasharray: none; }
-  .patch-fiber .patch-shine { stroke-width: .4; }
-  .fiber-strand { stroke: var(--patch); stroke-width: .8; stroke-dasharray: none; }
-  .lc-plug { fill: var(--patch-fiber-boot); stroke: var(--patch-edge); stroke-width: .4; }
-  .lc-clip { fill: var(--patch); stroke: var(--patch-edge); stroke-width: .3; }
-  .sfp-module { fill: url(#g-face); stroke: var(--edge); stroke-width: .5; }
-  .sfp-bail { stroke: var(--plastic); stroke-width: .7; }
-  /* Light packets show up on every cable colour */
-  :root { --packet-core: #fff; --packet-ring: rgba(0, 0, 0, .5); --packet-glow: #fff; --light-core: #fff; }
-  .pin { stroke: var(--metal-lo); }
-  .tag { fill: var(--tag); stroke: var(--tag-edge); }
-  .tag-strap { stroke: var(--tag-edge); }
-  .rack-svg .tag-text { fill: var(--tag-text); }
-  .tile { background: linear-gradient(var(--sled-hi), var(--sled-lo)); border-color: var(--edge-strong); }
+    .frame {
+        fill: url(#g-frame);
+        stroke: var(--steel-lo);
+    }
+    .rail {
+        fill: var(--steel);
+        stroke: var(--steel-lo);
+    }
+    .hole {
+        fill: var(--steel-lo);
+        stroke: var(--steel-hi);
+    }
+    .face {
+        fill: url(#g-face);
+        stroke: var(--edge);
+    }
+    .brush {
+        display: inline;
+        fill: url(#p-brush);
+        stroke: none;
+        pointer-events: none;
+    }
+    .brush-line {
+        stroke: var(--brush);
+        stroke-width: 0.5;
+    }
+    .screw {
+        fill: url(#g-screw);
+        stroke: var(--edge);
+    }
+    .vent,
+    .blade {
+        stroke: var(--edge);
+    }
+    .slot {
+        stroke: var(--steel-lo);
+        opacity: 0.5;
+    }
+    .ring,
+    .tray {
+        stroke: var(--edge-strong);
+    }
+    .port,
+    .plug-body {
+        fill: var(--plastic);
+        stroke: var(--edge);
+    }
+    .plate {
+        fill: var(--plate);
+        stroke: var(--steel-lo);
+    }
+    .rack-svg .title {
+        fill: var(--plate-text);
+    }
+    .display,
+    .lcd {
+        fill: var(--display);
+        stroke: var(--edge);
+    }
+    .rack-svg .on-display,
+    .rack-svg .lcd-text {
+        fill: var(--display-text);
+    }
+    .rack-svg .small {
+        fill: var(--engrave);
+    }
+    .module-body,
+    .pill {
+        fill: url(#g-sled);
+        stroke: var(--edge);
+    }
+    .module-link .module-body {
+        stroke: var(--edge-strong);
+    }
+    .blank-body {
+        fill: var(--blank);
+        stroke: var(--edge);
+    }
+    .cable {
+        stroke: var(--cable);
+        opacity: 0.9;
+    }
+    .patch-yellow {
+        --patch: var(--patch-yellow);
+    }
+    .patch-red {
+        --patch: var(--patch-red);
+    }
+    .patch-green {
+        --patch: var(--patch-green);
+    }
+    .patch-blue {
+        --patch: var(--patch-blue);
+    }
+    .patch-fiber {
+        --patch: var(--patch-fiber);
+    }
+    .patch-edge {
+        display: inline;
+        stroke: var(--patch-edge);
+        stroke-width: 3;
+    }
+    .patch-core {
+        stroke: var(--patch);
+        stroke-width: 2.2;
+    }
+    .patch-shine {
+        display: inline;
+        stroke: var(--patch-shine);
+        stroke-width: 0.6;
+        transform: translate(-0.4px, -0.4px);
+    }
+    .patch-boot {
+        fill: var(--patch);
+        stroke: var(--patch-edge);
+        stroke-width: 0.7;
+    }
+    /* Fibre: thin aqua (OM3/OM4) zip cord, LC plugs with a light boot */
+    .patch-fiber .patch-edge {
+        stroke-width: 1.9;
+    }
+    .patch-fiber .patch-core {
+        stroke-width: 1.3;
+        stroke-dasharray: none;
+    }
+    .patch-fiber .patch-shine {
+        stroke-width: 0.4;
+    }
+    .fiber-strand {
+        stroke: var(--patch);
+        stroke-width: 0.8;
+        stroke-dasharray: none;
+    }
+    .lc-plug {
+        fill: var(--patch-fiber-boot);
+        stroke: var(--patch-edge);
+        stroke-width: 0.4;
+    }
+    .lc-clip {
+        fill: var(--patch);
+        stroke: var(--patch-edge);
+        stroke-width: 0.3;
+    }
+    .sfp-module {
+        fill: url(#g-face);
+        stroke: var(--edge);
+        stroke-width: 0.5;
+    }
+    .sfp-bail {
+        stroke: var(--plastic);
+        stroke-width: 0.7;
+    }
+    /* Light packets show up on every cable colour */
+    :root {
+        --packet-core: #fff;
+        --packet-ring: rgba(0, 0, 0, 0.5);
+        --packet-glow: #fff;
+        --light-core: #fff;
+    }
+    .pin {
+        stroke: var(--metal-lo);
+    }
+    .tag {
+        fill: var(--tag);
+        stroke: var(--tag-edge);
+    }
+    .tag-strap {
+        stroke: var(--tag-edge);
+    }
+    .rack-svg .tag-text {
+        fill: var(--tag-text);
+    }
+    .tile {
+        background: linear-gradient(var(--sled-hi), var(--sled-lo));
+        border-color: var(--edge-strong);
+    }
 }

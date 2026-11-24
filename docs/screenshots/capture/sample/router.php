@@ -1,4 +1,5 @@
 <?php
+
 // Router for PHP's built-in server: sets the headers Authelia would pass, per port
 // 8081 an admin, 8082 a regular user, then runs the page (the copy in /work/site, or PAGE_INDEX)
 if ($_SERVER['SERVER_PORT'] == 8081) {

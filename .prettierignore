@@ -1,0 +1,7 @@
+# Generated or not ours to format
+package-lock.json
+composer.lock
+vendor/
+node_modules/
+docs/screenshots/*.png
+docs/screenshots/*.gif

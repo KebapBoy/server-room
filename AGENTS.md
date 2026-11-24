@@ -8,27 +8,27 @@ A start page that runs inside the PHP-FPM of a SWAG container, or as a container
 
 ## Layout
 
-| File | Purpose |
-|---|---|
-| `index.php` | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint |
-| `.env.example` | Template for `.env`, the installation-specific settings (`.env` itself is not in Git) |
-| `page.html.php` | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback |
-| `style.css` | Styles and animations, inlined into the page |
-| `favicon.svg` | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`) |
-| `intro.js` | Types the greeting into the terminal window and the shutdown countdown |
-| `rack.js` | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug |
-| `data/stacks.json` | Stack snapshot, written by your own job, not in Git |
-| `docs/screenshots/` | Screenshots and GIFs for the README, taken with made-up sample data |
-| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` (`snapshot.sh` keeps its `stacks.json` current for the demo and the dev server) |
-| `docs/screenshots/capture/Dockerfile` | Stage `capture` for `capture.sh` and `perf.sh`, stage `dev` for the devcontainer (with Claude Code) |
-| `Dockerfile`, `.dockerignore` | The container image: Alpine with nginx and PHP-FPM, only the page files, user `nobody`, port 8080 |
-| `docker/` | `nginx.conf`, `php-fpm.conf` and `entrypoint.sh` of the image; `demo-proxy.conf` plays SWAG and Authelia in the demo |
-| `compose.yaml` | Demo: the image with the sample installation behind `demo-proxy.conf`, ports 8081 (admin) and 8082 (regular user) |
-| `.devcontainer/` | `devcontainer.json` and `serve.sh`, the dev server: the working tree with the sample installation on 8081 and 8082; Claude Code with its settings in a volume and the host's `~/.claude/CLAUDE.md` mounted read-only (copied to the ignored `.devcontainer/host/` by `initializeCommand`) |
-| `docs/perf/` | Performance harness for the animated rack: `perf.sh` and `perf.mjs`, reusing the capture image and sample installation |
-| `README.md` | What it does, requirements, installation, configuration |
-| `CHANGELOG.md` | Release notes, one section per version |
-| `AGENTS.md` | This file |
+| File                                  | Purpose                                                                                                                                                                                                                                                                                   |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.php`                           | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint                                                                                                                                                                                         |
+| `.env.example`                        | Template for `.env`, the installation-specific settings (`.env` itself is not in Git)                                                                                                                                                                                                     |
+| `page.html.php`                       | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback                                                                                                                                                                                                               |
+| `style.css`                           | Styles and animations, inlined into the page                                                                                                                                                                                                                                              |
+| `favicon.svg`                         | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`)                                                                                                                                                                                                                   |
+| `intro.js`                            | Types the greeting into the terminal window and the shutdown countdown                                                                                                                                                                                                                    |
+| `rack.js`                             | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug                                                                                                                                                                                                              |
+| `data/stacks.json`                    | Stack snapshot, written by your own job, not in Git                                                                                                                                                                                                                                       |
+| `docs/screenshots/`                   | Screenshots and GIFs for the README, taken with made-up sample data                                                                                                                                                                                                                       |
+| `docs/screenshots/capture/`           | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` (`snapshot.sh` keeps its `stacks.json` current for the demo and the dev server)                                                                                             |
+| `docs/screenshots/capture/Dockerfile` | Stage `capture` for `capture.sh` and `perf.sh`, stage `dev` for the devcontainer (with Claude Code)                                                                                                                                                                                       |
+| `Dockerfile`, `.dockerignore`         | The container image: Alpine with nginx and PHP-FPM, only the page files, user `nobody`, port 8080                                                                                                                                                                                         |
+| `docker/`                             | `nginx.conf`, `php-fpm.conf` and `entrypoint.sh` of the image; `demo-proxy.conf` plays SWAG and Authelia in the demo                                                                                                                                                                      |
+| `compose.yaml`                        | Demo: the image with the sample installation behind `demo-proxy.conf`, ports 8081 (admin) and 8082 (regular user)                                                                                                                                                                         |
+| `.devcontainer/`                      | `devcontainer.json` and `serve.sh`, the dev server: the working tree with the sample installation on 8081 and 8082; Claude Code with its settings in a volume and the host's `~/.claude/CLAUDE.md` mounted read-only (copied to the ignored `.devcontainer/host/` by `initializeCommand`) |
+| `docs/perf/`                          | Performance harness for the animated rack: `perf.sh` and `perf.mjs`, reusing the capture image and sample installation                                                                                                                                                                    |
+| `README.md`                           | What it does, requirements, installation, configuration                                                                                                                                                                                                                                   |
+| `CHANGELOG.md`                        | Release notes, one section per version                                                                                                                                                                                                                                                    |
+| `AGENTS.md`                           | This file                                                                                                                                                                                                                                                                                 |
 
 ## Conventions
 
