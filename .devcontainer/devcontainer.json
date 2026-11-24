@@ -1,38 +1,66 @@
-// Devcontainer with PHP, Node, Chromium and ffmpeg (the image of docs/screenshots/capture, stage "dev").
-// .devcontainer/serve.sh serves the working tree with the made-up installation: 8081 admin, 8082 regular user.
-// Claude Code keeps its settings and sign-in in the volume at ~/.claude, so they survive rebuilds;
-// your user-level ~/.claude/CLAUDE.md from the host is mounted in read-only.
+// Devcontainer: stage "dev" of the Dockerfile (PHP, Node, Chromium, ffmpeg, Composer), the dev-kit
+// feature (Claude Code with the shared configuration, git, just, dev-kit). No Docker inside:
+// capture.sh and perf.sh run directly, just demo runs on the host.
+// .devcontainer/serve.sh serves the working tree with the made-up installation (just serve): 8081
+// the admin Alex, 8082 the regular user Sam.
+//
+// The host does not use this file or the Dockerfile from the repository: copy both to
+// ~/.config/dev-kit/server-room/.devcontainer/ and open ~/.config/dev-kit/server-room in VS Code
+// ("Reopen in Container"). The code lives in the Docker volume server-room-workspace, never on the
+// host, and code in the container cannot change how the host builds and starts it. Take changes to
+// the two files over by hand, after reading them (dev-kit-host diff server-room shows them).
 {
     "name": "server-room",
+    // Runs on the host before the container starts (dev-kit-host from the dev-kit repository):
+    // copies your ~/.claude/CLAUDE.md to ~/.config/dev-kit/, clones the repository into the volume
+    // server-room-workspace the first time, and warns if this file or the Dockerfile differs from
+    // the repository's
+    "initializeCommand": "~/.config/dev-kit/bin/dev-kit-host prepare server-room git@github.com:KebapBoy/server-room.git",
+    // The host's copy of the Dockerfile next to this file; the stage dev needs nothing else
     "build": {
-        "dockerfile": "../docs/screenshots/capture/Dockerfile",
-        "context": "../docs/screenshots/capture",
+        "dockerfile": "Dockerfile",
+        "context": ".",
         "target": "dev"
     },
-    // Fixed path: /capture and /perf in the image link into it
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/server-room,type=bind",
+    // Fixed path: /capture, /perf and /sample in the image link into it
+    "workspaceMount": "source=server-room-workspace,target=/workspaces/server-room,type=volume",
     "workspaceFolder": "/workspaces/server-room",
-    "remoteUser": "node",
-    // Runs on the host before the container starts: copies your user-level ~/.claude/CLAUDE.md (or an
-    // empty file if there is none) to .devcontainer/host/, which is mounted read-only as Claude Code's
-    // CLAUDE.md in the container. cp overwrites in place, so the mount picks up changes on every start.
-    "initializeCommand": "mkdir -p .devcontainer/host && { cp ~/.claude/CLAUDE.md .devcontainer/host/CLAUDE.md 2>/dev/null || : > .devcontainer/host/CLAUDE.md; }",
+    "remoteUser": "dev",
+    "features": {
+        "ghcr.io/kebapboy/dev-kit/dev-kit:1": {}
+    },
+    // From the host, read-only: your CLAUDE.md, the managed Claude Code settings and this
+    // repository's folder etc next to .devcontainer (deploy settings, deploy key, host keys)
     "mounts": [
-        "source=server-room-claude-${devcontainerId},target=/home/node/.claude,type=volume",
-        "source=${localWorkspaceFolder}/.devcontainer/host/CLAUDE.md,target=/home/node/.claude/CLAUDE.md,type=bind,readonly"
+        "source=${localEnv:HOME}/.config/dev-kit/CLAUDE.md,target=/var/lib/dev-kit/claude/CLAUDE.md,type=bind,readonly",
+        "source=${localEnv:HOME}/.config/dev-kit/claude-code,target=/etc/claude-code,type=bind,readonly",
+        "source=${localWorkspaceFolder}/etc,target=/etc/dev-kit,type=bind,readonly"
     ],
-    "containerEnv": {
-        "SERVER_ROOM_DEVCONTAINER": "1"
+    // git fetches with the repository's read-only deploy key from etc (dev-kit-host prepare
+    // creates it); the forwarded SSH agent should hold only your signing key, so the container
+    // signs commits but cannot push: push from the host with dev-kit-host push
+    "remoteEnv": {
+        "GIT_SSH_COMMAND": "ssh -i /etc/dev-kit/deploy-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/etc/dev-kit/known_hosts -o StrictHostKeyChecking=yes"
     },
     "forwardPorts": [8081, 8082],
     "portsAttributes": {
-        "8081": { "label": "Admin (Alex)" },
-        "8082": { "label": "Regular user (Sam)" }
+        "8081": { "label": "server-room as admin Alex (working tree)" },
+        "8082": { "label": "server-room as regular user Sam (working tree)" }
     },
-    "postStartCommand": "setsid .devcontainer/serve.sh > /tmp/serve.log 2>&1 &",
+    "postCreateCommand": "npm ci && composer install",
+    // VS Code runs this in a terminal that hangs up when the command returns: the dev server
+    // ignores that (trap) and leaves the terminal's session (setsid)
+    "postStartCommand": "trap '' HUP; setsid .devcontainer/serve.sh > /tmp/serve.log 2>&1 &",
     "customizations": {
         "vscode": {
-            "extensions": ["bmewburn.vscode-intelephense-client", "anthropic.claude-code"]
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "SanderRonde.phpstan-vscode",
+                "junstyle.php-cs-fixer",
+                "esbenp.prettier-vscode",
+                "dbaeumer.vscode-eslint",
+                "editorconfig.editorconfig"
+            ]
         }
     }
 }

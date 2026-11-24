@@ -7,6 +7,22 @@
 // Everything specific to an installation is read from .env next to this file (see .env.example);
 // real environment variables of the same name take precedence, e.g. in a container.
 
+// Liveness for the container health check, SWAG and dev-kit deploy, which waits until it reports
+// the version it deployed. Comes before the settings, so it answers even when they are missing.
+// Decided on nginx's normalised path (DOCUMENT_URI), the one its location matched: /%68ealthz or
+// //healthz reach this location too and must not get the page. PHP's built-in server has no
+// DOCUMENT_URI and routes by the raw path anyway.
+$path = $_SERVER['DOCUMENT_URI'] ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+if ($path === '/healthz') {
+    header('Content-Type: application/json');
+    header('Cache-Control: no-store');
+    echo json_encode([
+        'status' => 'ok',
+        'version' => trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev',
+    ]);
+    exit;
+}
+
 define('ENV_FILE', getenv('ENV_FILE') ?: __DIR__ . '/.env');
 
 // Docker networks that do not mean two containers talk to each other

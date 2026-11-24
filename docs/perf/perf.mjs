@@ -1,6 +1,6 @@
 // Measures frame intervals and main-thread time of the page in headless Chromium over the
-// DevTools protocol. Run by perf.sh inside its container: /capture is the screenshot folder
-// (sample installation), /work a temp dir with the page in site/ and out/ for the results.
+// DevTools protocol. Run by perf.sh inside its container: /sample is the sample
+// installation, /work a temp dir with the page in site/ and out/ for the results.
 // Headless Chromium renders in software, so absolute numbers are pessimistic; compare runs
 // with each other, not with a real device.
 import { spawn } from "node:child_process"
@@ -16,7 +16,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 // ---- sample snapshot -------------------------------------------------------
 function writeSnapshot() {
-    const snap = JSON.parse(fs.readFileSync("/capture/sample/stacks.json", "utf8"))
+    const snap = JSON.parse(fs.readFileSync("/sample/stacks.json", "utf8"))
     snap.generated = Math.floor(Date.now() / 1000)
     fs.mkdirSync("/work/site/data", { recursive: true })
     fs.writeFileSync("/work/site/data/stacks.json", JSON.stringify(snap))
@@ -151,7 +151,7 @@ async function measure(b, sc) {
 }
 
 // ---- main -----------------------------------------------------------------
-const ADMIN = "http://example.com:8081/"
+const ADMIN = "http://example.com:18081/"
 const DESKTOP = { width: 1440, height: 900 }
 const TABLET = { width: 820, height: 1180, scale: 2, mobile: true }
 const PHONE = { width: 390, height: 844, scale: 3, mobile: true }
@@ -166,7 +166,8 @@ const scenarios = [
 
 fs.mkdirSync(OUT, { recursive: true })
 writeSnapshot()
-const server = spawn("php", ["-S", "0.0.0.0:8081", "/capture/sample/router.php"], {
+// Not 8081: in the devcontainer the dev server has it
+const server = spawn("php", ["-S", "127.0.0.1:18081", "/sample/router.php"], {
     stdio: "ignore",
 })
 // Default: capped at 60 fps like a real display. PERF_UNCAPPED=1 lifts the cap to show headroom

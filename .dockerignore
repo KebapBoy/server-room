@@ -1,5 +1,7 @@
-# Only what the image needs; never .env, data/ or the screenshots
+# Allowlist: only what the image needs goes into the build context; never .env, data/ or the
+# screenshots
 *
+!VERSION
 !index.php
 !page.html.php
 !style.css

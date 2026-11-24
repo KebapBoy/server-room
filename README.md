@@ -115,23 +115,13 @@ With "more contrast" the rack is drawn as plain outlines. Without JavaScript the
 
 ## Running as a container
 
-Instead of inside SWAG's PHP-FPM, the page can run as a container of its own next to SWAG and Authelia: nginx and PHP-FPM on Alpine, port 8080, user `nobody`. SWAG still does the sign-in and passes the user on. The image is built from this repository; `docker compose up --build` in a clone starts a [demo](#development) with made-up data.
+Instead of inside SWAG's PHP-FPM, the page can run as a container of its own next to SWAG and Authelia: nginx and PHP-FPM on Alpine, port 8080, user `server-room` (UID 1000). SWAG still does the sign-in and passes the user on. The image is built from this repository; `just demo` in a clone starts a [demo](#development) with made-up data.
 
-1. Add the container to the compose stack of SWAG, in a network that reaches both SWAG and Authelia:
+1. Deploy [`deploy/compose.yaml`](deploy/compose.yaml), e.g. as a Dockhand git stack with that compose path, or with `docker compose -f deploy/compose.yaml up -d --build` in a clone. Set the settings from [Configuration](#configuration) and the variables at the end of `.env.example` in the stack's environment:
 
-    ```yaml
-    services:
-        server-room:
-            build: <git URL of this repository>#v1.1.0 # or the path of a clone
-            env_file: server-room.env # the keys of .env.example
-            volumes:
-                - <swag-config>/nginx/proxy-confs:/config/nginx/proxy-confs:ro
-                - <snapshot-folder>:/app/data:ro
-            restart: unless-stopped
-    ```
-
-    - Settings come from the environment (`env_file:` or `environment:`), or from a `.env` mounted at `/app/.env`.
-    - Mount the folder that holds `stacks.json`, not the file itself: the snapshot job replaces the file by renaming, which a file mount would not see.
+    - `SERVER_ROOM_PROXY_NETWORK`: a Docker network that reaches both SWAG and Authelia, with nothing else in it.
+    - `SERVER_ROOM_SNAPSHOT_DIR`: the folder that holds `stacks.json`, mounted at `/data`. Mount the folder, not the file: the snapshot job replaces the file by renaming, which a file mount would not see.
+    - `SERVER_ROOM_PROXY_CONFS`: SWAG's folder with the proxy confs.
     - **Do not publish the port.** The container believes the `Remote-*` headers it gets, so anyone who can reach port 8080 can claim to be any user. Only SWAG may reach it.
 
 2. Pass the page on to the container in the server block of your main domain, instead of the FastCGI location from the installation:
@@ -155,26 +145,26 @@ Instead of inside SWAG's PHP-FPM, the page can run as a container of its own nex
 
     `authelia-location.conf` sends the signed-in user as `Remote-User`, `Remote-Name` and `Remote-Groups` and overwrites whatever the browser sent in their place.
 
-3. Steps 4 to 6 of the [installation](#installation) apply as they are. `docker compose ps` shows the container as healthy once nginx and PHP-FPM answer.
+3. Steps 4 to 6 of the [installation](#installation) apply as they are. The container counts as healthy once `/healthz` answers; it reports the version, e.g. `{"status":"ok","version":"1.1.0"}`. To reach it through SWAG without signing in, give it a `location = /healthz` with the same proxy lines but without `authelia-location.conf`, and keep it to your LAN.
 
 ## Configuration
 
 All settings live in `.env` next to `index.php`; `.env.example` documents them. Environment variables of the same name take precedence, so a container can do without `.env` (see [Running as a container](#running-as-a-container)); `ENV_FILE` points to another file instead of `.env`. Lists are comma-separated, maps are comma-separated `name=value` pairs, and service names are proxy conf file names without `.subdomain.conf`.
 
-| Key                                   | Default                                      | Meaning                                                                               |
-| ------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `BASE_DOMAIN`                         | `example.com`                                | Domain whose subdomains SWAG serves (required)                                        |
-| `AUTHELIA_URL`                        | `http://authelia:9091`                       | Authelia as reached from the SWAG container                                           |
-| `LOGOUT_URL`                          | `https://auth.<BASE_DOMAIN>/logout`          | Where signing out leads                                                               |
-| `PROXY_CONFS`                         | `/config/nginx/proxy-confs/*.subdomain.conf` | Proxy confs to read                                                                   |
-| `SKIPPED_SERVICES`                    | `auth`                                       | Services that are never shown                                                         |
-| `ADMIN_GROUP`                         | `admins`                                     | Group that sees all stacks and containers                                             |
-| `GROUPS_WITHOUT_AUTHELIA`             | `admins`                                     | Groups that see services without Authelia                                             |
-| `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` |                                              | The same per service, e.g. `jellyfin=admins\|family`                                  |
-| `SERVICE_CONTAINERS`                  |                                              | Container for services whose proxy conf has no usable upstream, e.g. `dashboard=swag` |
-| `SERVICE_PATHS`                       |                                              | Start path for services whose UI does not live at `/`, e.g. `pihole=/admin/`          |
-| `SNAPSHOT_FILE`                       | `data/stacks.json` next to `index.php`       | Stack snapshot (see [Stack snapshot](#stack-snapshot))                                |
-| `SNAPSHOT_MAX_AGE`                    | `180`                                        | Seconds after which the stack snapshot counts as stale                                |
+| Key                                   | Default                                      | Meaning                                                                                      |
+| ------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `BASE_DOMAIN`                         | `example.com`                                | Domain whose subdomains SWAG serves (required)                                               |
+| `AUTHELIA_URL`                        | `http://authelia:9091`                       | Authelia as reached from the SWAG container                                                  |
+| `LOGOUT_URL`                          | `https://auth.<BASE_DOMAIN>/logout`          | Where signing out leads                                                                      |
+| `PROXY_CONFS`                         | `/config/nginx/proxy-confs/*.subdomain.conf` | Proxy confs to read                                                                          |
+| `SKIPPED_SERVICES`                    | `auth`                                       | Services that are never shown                                                                |
+| `ADMIN_GROUP`                         | `admins`                                     | Group that sees all stacks and containers                                                    |
+| `GROUPS_WITHOUT_AUTHELIA`             | `admins`                                     | Groups that see services without Authelia                                                    |
+| `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` |                                              | The same per service, e.g. `jellyfin=admins\|family`                                         |
+| `SERVICE_CONTAINERS`                  |                                              | Container for services whose proxy conf has no usable upstream, e.g. `dashboard=swag`        |
+| `SERVICE_PATHS`                       |                                              | Start path for services whose UI does not live at `/`, e.g. `pihole=/admin/`                 |
+| `SNAPSHOT_FILE`                       | `data/stacks.json` next to `index.php`       | Stack snapshot (see [Stack snapshot](#stack-snapshot)); `/data/stacks.json` in the container |
+| `SNAPSHOT_MAX_AGE`                    | `180`                                        | Seconds after which the stack snapshot counts as stale                                       |
 
 Timings of the animation are constants at the top of `rack.js` (`SHUTDOWN_MS`, `PHASES`, `LOW_BATTERY`, `FIBER_GAP_MS`).
 
@@ -251,12 +241,12 @@ Without JavaScript or with "reduce motion" the plug is a plain link to the logou
 
 ## Development
 
-- No build step and no dependencies. Changes are live on the next request; nginx only needs a reload when its conf changes.
-- Syntax check: `docker exec swag php -l /config/www/start/index.php`
-- Devcontainer: open the folder in VS Code and choose "Reopen in Container". It has PHP, Node, Chromium and ffmpeg and serves the working tree with the made-up installation from the screenshots: port 8081 as the admin Alex, 8082 as the regular user Sam (log in `/tmp/serve.log`). Your own `.env` is not read. `capture.sh` and `perf.sh` run in it without Docker. Claude Code is installed (`claude` in the terminal, plus the VS Code extension); its settings and sign-in are kept in a volume, so you sign in once and stay signed in across rebuilds, and your user-level `~/.claude/CLAUDE.md` from the host is mounted in read-only (refreshed on every start; edit it on the host).
-- Demo: `docker compose up --build` runs the container image with the same made-up installation, behind a proxy that plays SWAG and Authelia, at http://localhost:8081 (admin) and http://localhost:8082 (regular user). `DEMO_ADMIN_PORT` and `DEMO_USER_PORT` change the ports.
+- The page has no build step and no runtime dependencies. Changes are live on the next request; nginx only needs a reload when its conf changes. The development tools (Prettier, ESLint, PHP-CS-Fixer, PHPStan) come with `npm ci` and `composer install`.
+- Commands are recipes in the `justfile`: `just check` (formatting, linting, static analysis), `just fmt`, `just serve`, `just demo`, `just perf`, `just capture`.
+- Devcontainer: `.devcontainer/` uses the [dev-kit](https://github.com/KebapBoy/dev-kit) feature (Claude Code, git, just). Copy `devcontainer.json` and the `Dockerfile` to the host folder dev-kit describes and open that folder in VS Code; the code lives in a Docker volume. The container has PHP, Node, Chromium and ffmpeg and serves the working tree with the made-up installation from `docs/sample` (`just serve`): port 8081 as the admin Alex, 8082 as the regular user Sam (log in `/tmp/serve.log`). Your own `.env` is not read. `just capture` and `just perf` run in it without Docker.
+- Demo: `just demo` runs the container image with the same made-up installation, behind a proxy that plays SWAG and Authelia, at http://127.0.0.1:8081 (admin) and http://127.0.0.1:8082 (regular user). `DEMO_ADMIN_PORT` and `DEMO_USER_PORT` change the ports. It needs Docker, so it runs on the host, not in the devcontainer.
 - `/?dry` plays the sign-out animation and reloads the page instead of signing out.
-- `docs/screenshots/capture/capture.sh` regenerates the screenshots and GIFs from a made-up installation, using only Docker (see [AGENTS.md](AGENTS.md#screenshots)).
+- `just capture` regenerates the screenshots and GIFs from the made-up installation, using only Docker (see [AGENTS.md](AGENTS.md#screenshots)).
 
 Show the mapping without a browser, as an admin:
 
@@ -269,21 +259,25 @@ docker exec swag php -r '$_SERVER["REMOTE_GROUPS"]="admins";
 
 ### Files
 
-| File                        | Purpose                                                                                                                                 |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.php`                 | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint                                       |
-| `.env.example`              | Template for `.env`, the installation-specific settings (`.env` itself is not in Git)                                                   |
-| `page.html.php`             | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback                                                             |
-| `style.css`                 | Styles and animations, inlined into the page                                                                                            |
-| `favicon.svg`               | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`)                                                                 |
-| `intro.js`                  | Types the greeting into the terminal window and the shutdown countdown                                                                  |
-| `rack.js`                   | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug                                                            |
-| `data/stacks.json`          | Stack snapshot, written by your own job, not in Git                                                                                     |
-| `docs/screenshots/`         | Screenshots and GIFs for the README, taken with made-up sample data                                                                     |
-| `docs/screenshots/capture/` | Regenerates them: `capture.sh`, the capture script, its Docker image (also the devcontainer's) and the sample installation in `sample/` |
-| `Dockerfile`, `docker/`     | The container image: nginx and PHP-FPM configuration, entrypoint, and the proxy of the demo                                             |
-| `compose.yaml`              | Demo of the container image with the sample installation                                                                                |
-| `.devcontainer/`            | Devcontainer and its dev server `serve.sh`                                                                                              |
+| File                    | Purpose                                                                                                                                 |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.php`             | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint, `/healthz`                           |
+| `.env.example`          | Template for `.env`, the installation-specific settings (`.env` itself is not in Git)                                                   |
+| `page.html.php`         | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback                                                             |
+| `style.css`             | Styles and animations, inlined into the page                                                                                            |
+| `favicon.svg`           | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`)                                                                 |
+| `intro.js`              | Types the greeting into the terminal window and the shutdown countdown                                                                  |
+| `rack.js`               | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug                                                            |
+| `VERSION`               | The version, reported at `/healthz`                                                                                                     |
+| `data/stacks.json`      | Stack snapshot, written by your own job, not in Git                                                                                     |
+| `docs/sample/`          | The made-up installation for the demo, the dev server, the screenshots and the performance harness                                      |
+| `docs/screenshots/`     | Screenshots and GIFs for the README; `capture/` regenerates them                                                                        |
+| `docs/perf/`            | Performance harness for the animated rack                                                                                               |
+| `Dockerfile`, `docker/` | The container image (also the capture image and the devcontainer's): nginx and PHP-FPM configuration, entrypoint, the proxy of the demo |
+| `compose.yaml`          | Demo of the container image with the sample installation                                                                                |
+| `deploy/compose.yaml`   | The container for a real installation                                                                                                   |
+| `.devcontainer/`        | Devcontainer and its dev server `serve.sh`                                                                                              |
+| `justfile`              | Development commands                                                                                                                    |
 
 See [CHANGELOG.md](CHANGELOG.md) for the history and [AGENTS.md](AGENTS.md) for contribution guidelines.
 

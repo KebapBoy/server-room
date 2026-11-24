@@ -4,7 +4,7 @@ parameters:
     paths:
         - index.php
         - page.html.php
-        - docs/screenshots/capture/sample/router.php
+        - docs/sample/router.php
     # The model is a tree of loose arrays (snapshot JSON, proxy confs); typing every shape adds
     # nothing to the checks that matter here
     ignoreErrors:

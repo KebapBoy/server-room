@@ -10,13 +10,15 @@ check=
 if [ "${1:-}" = --check ]; then check=1; shift; fi
 
 here=$(cd "$(dirname "$0")" && pwd)
-capture=$(cd "$here/../screenshots/capture" && pwd)
+root=$(cd "$here/../.." && pwd)
+sample=$root/docs/sample
 repo=$(cd "${1:-$here/../..}" && pwd)
 image=server-room-capture
 
-# /capture is the screenshot folder (router.php, sample data), /perf this folder
+# /sample is the sample installation (router.php, sample data), /perf this folder
 if [ -n "${SERVER_ROOM_DEVCONTAINER:-}" ]; then
-    # The devcontainer has the tools, and /capture, /perf and /work where the capture container has them
+    # The devcontainer has the tools, and /sample, /perf and /work where the capture container has
+    # them
     work=/work
     find "$work" -mindepth 1 -delete
     trap 'find "$work" -mindepth 1 -delete' EXIT
@@ -24,10 +26,10 @@ if [ -n "${SERVER_ROOM_DEVCONTAINER:-}" ]; then
 else
     work=$(mktemp -d)
     trap 'rm -rf "$work"' EXIT
-    docker build -q --target capture -t "$image" "$capture" >/dev/null
+    docker build -q --target capture -t "$image" "$root" >/dev/null
     run() {
         docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e PERF_UNCAPPED="${PERF_UNCAPPED:-}" -e PERF_CHECK="$check" \
-            -v "$capture:/capture:ro" -v "$here:/perf:ro" -v "$work:/work" "$image" "$@"
+            -v "$sample:/sample:ro" -v "$here:/perf:ro" -v "$work:/work" "$image" "$@"
     }
 fi
 
@@ -36,7 +38,7 @@ mkdir -p "$work/site" "$work/out"
 for file in index.php page.html.php style.css intro.js rack.js favicon.svg; do
     cp "$repo/$file" "$work/site/"
 done
-cp "$capture/sample/env" "$work/site/.env"
+cp "$sample/env" "$work/site/.env"
 
 run node /perf/perf.mjs || status=$?
 

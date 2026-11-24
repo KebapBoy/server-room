@@ -1,26 +1,26 @@
-# Demo: the page as a container with the made-up installation from the screenshots, behind a proxy
-# that plays SWAG and Authelia. Run "docker compose up --build", then open http://localhost:8081
-# (admin Alex) or http://localhost:8082 (regular user Sam); /?dry plays the sign-out. Other ports:
-# DEMO_ADMIN_PORT=18081 DEMO_USER_PORT=18082 docker compose up --build
-# For a real installation see README, "Running as a container".
+# Demo: the page as a container with the made-up installation from docs/sample, behind a proxy
+# that plays SWAG and Authelia (just demo), at http://127.0.0.1:8081 (admin Alex) or
+# http://127.0.0.1:8082 (regular user Sam); /?dry plays the sign-out. Other ports:
+# DEMO_ADMIN_PORT=18081 DEMO_USER_PORT=18082 just demo
+# For a real installation see deploy/compose.yaml and README, "Running as a container".
 name: server-room-demo
 
 services:
     rack:
         build: .
-        image: server-room
-        env_file: docs/screenshots/capture/sample/env
+        image: server-room:demo
+        env_file: docs/sample/env
         volumes:
-            - ./docs/screenshots/capture/sample:/capture/sample:ro
-            - snapshot:/app/data:ro
+            - ./docs/sample:/sample:ro
+            - snapshot:/data:ro
 
-    # Stands in for your snapshot job: sample/stacks.json, kept current
+    # Stands in for your snapshot job: docs/sample/stacks.json, kept current
     snapshot:
         image: alpine:3.24
-        command: ["/capture/sample/snapshot.sh", "/app/data/stacks.json"]
+        command: ["/sample/snapshot.sh", "/data/stacks.json"]
         volumes:
-            - ./docs/screenshots/capture/sample:/capture/sample:ro
-            - snapshot:/app/data
+            - ./docs/sample:/sample:ro
+            - snapshot:/data
 
     proxy:
         image: nginx:1.30-alpine

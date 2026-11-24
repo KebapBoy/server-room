@@ -4,66 +4,93 @@ Instructions for AI coding agents (and humans) working on this repository. What 
 
 ## Project
 
-A start page that runs inside the PHP-FPM of a SWAG container, or as a container of its own behind SWAG (`Dockerfile`). `index.php` reads the active proxy confs, asks Authelia which of them the signed-in user may open, maps them to containers from `data/stacks.json` and hands a filtered model to the browser, where `rack.js` draws it as an SVG server rack.
+A start page that runs inside the PHP-FPM of a SWAG container, or as a container of its own behind SWAG and Authelia (`Dockerfile`, `deploy/compose.yaml`). `index.php` reads the active proxy confs, asks Authelia which of them the signed-in user may open, maps them to containers from the stack snapshot (`stacks.json`) and hands a filtered model to the browser, where `rack.js` draws it as an SVG server rack.
+
+## Architecture
+
+- **Request:** SWAG authenticates with Authelia and passes the user on (`Remote-User`, `Remote-Name`, `Remote-Groups` in the container; `$user`, `$name`, `$groups` as FastCGI params inside SWAG). `index.php` reads the settings (`getenv() + load_env(ENV_FILE)`), the proxy confs and the snapshot, asks Authelia per service (`/api/authz/auth-request` with the user's session cookie), builds the model and renders `page.html.php`, which inlines CSS, JS, the favicon and the model. `/?data=1` returns the same model as JSON; `rack.js` polls it.
+- **Snapshot:** `stacks.json` is written by a job outside this repository (README, "Stack snapshot"); the page only reads it and marks it stale after `SNAPSHOT_MAX_AGE`.
+- **Container:** nginx serves `/` and `/healthz` and nothing else, PHP-FPM runs `index.php`. `/healthz` answers before the settings are read, with the version from `VERSION`. The container trusts the `Remote-*` headers, so only SWAG may reach it.
+- **Browser:** `rack.js` draws the rack, animates traffic and the power plug; `intro.js` types the greeting and the shutdown countdown. What moves follows the rendering rules under "Performance".
 
 ## Layout
 
-| File                                  | Purpose                                                                                                                                                                                                                                                                                   |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.php`                           | Logic: read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint                                                                                                                                                                                         |
-| `.env.example`                        | Template for `.env`, the installation-specific settings (`.env` itself is not in Git)                                                                                                                                                                                                     |
-| `page.html.php`                       | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback                                                                                                                                                                                                               |
-| `style.css`                           | Styles and animations, inlined into the page                                                                                                                                                                                                                                              |
-| `favicon.svg`                         | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`)                                                                                                                                                                                                                   |
-| `intro.js`                            | Types the greeting into the terminal window and the shutdown countdown                                                                                                                                                                                                                    |
-| `rack.js`                             | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug                                                                                                                                                                                                              |
-| `data/stacks.json`                    | Stack snapshot, written by your own job, not in Git                                                                                                                                                                                                                                       |
-| `docs/screenshots/`                   | Screenshots and GIFs for the README, taken with made-up sample data                                                                                                                                                                                                                       |
-| `docs/screenshots/capture/`           | Regenerates them: `capture.sh`, the capture script, its Docker image and the sample installation in `sample/` (`snapshot.sh` keeps its `stacks.json` current for the demo and the dev server)                                                                                             |
-| `docs/screenshots/capture/Dockerfile` | Stage `capture` for `capture.sh` and `perf.sh`, stage `dev` for the devcontainer (with Claude Code)                                                                                                                                                                                       |
-| `Dockerfile`, `.dockerignore`         | The container image: Alpine with nginx and PHP-FPM, only the page files, user `nobody`, port 8080                                                                                                                                                                                         |
-| `docker/`                             | `nginx.conf`, `php-fpm.conf` and `entrypoint.sh` of the image; `demo-proxy.conf` plays SWAG and Authelia in the demo                                                                                                                                                                      |
-| `compose.yaml`                        | Demo: the image with the sample installation behind `demo-proxy.conf`, ports 8081 (admin) and 8082 (regular user)                                                                                                                                                                         |
-| `.devcontainer/`                      | `devcontainer.json` and `serve.sh`, the dev server: the working tree with the sample installation on 8081 and 8082; Claude Code with its settings in a volume and the host's `~/.claude/CLAUDE.md` mounted read-only (copied to the ignored `.devcontainer/host/` by `initializeCommand`) |
-| `docs/perf/`                          | Performance harness for the animated rack: `perf.sh` and `perf.mjs`, reusing the capture image and sample installation                                                                                                                                                                    |
-| `README.md`                           | What it does, requirements, installation, configuration                                                                                                                                                                                                                                   |
-| `CHANGELOG.md`                        | Release notes, one section per version                                                                                                                                                                                                                                                    |
-| `AGENTS.md`                           | This file                                                                                                                                                                                                                                                                                 |
+| File                            | Purpose                                                                                                                                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.php`                     | Logic: `/healthz`, read proxy confs, ask Authelia, map services to containers, build the model, JSON endpoint                                                                             |
+| `.env.example`                  | Template for `.env`, the installation-specific settings (`.env` itself is not in Git), plus the variables of `deploy/compose.yaml`                                                        |
+| `page.html.php`                 | HTML template; inlines CSS, JS and the initial model, `<noscript>` fallback                                                                                                               |
+| `style.css`                     | Styles and animations, inlined into the page                                                                                                                                              |
+| `favicon.svg`                   | Favicon, inlined as a data URI (there is deliberately no `favicon.ico`)                                                                                                                   |
+| `intro.js`                      | Types the greeting into the terminal window and the shutdown countdown                                                                                                                    |
+| `rack.js`                       | Draws the rack as SVG, polls `/?data=1`, animates traffic and the power plug                                                                                                              |
+| `VERSION`                       | The version (source for releases and `/healthz`)                                                                                                                                          |
+| `data/stacks.json`              | Stack snapshot, written by your own job, not in Git                                                                                                                                       |
+| `docs/sample/`                  | The made-up installation: `env`, `proxy-confs/`, `stacks.json` (`snapshot.sh` keeps it current), `router.php` (stands in for Authelia)                                                    |
+| `docs/screenshots/`             | Screenshots and GIFs for the README; `capture/` regenerates them (`capture.sh`, `capture.mjs`)                                                                                            |
+| `docs/perf/`                    | Performance harness for the animated rack: `perf.sh` and `perf.mjs`                                                                                                                       |
+| `Dockerfile`, `.dockerignore`   | Stages `base`, `build` (the page files), `capture` (Node, PHP, Chromium, ffmpeg for capture and perf), `dev` (the devcontainer), `app` (nginx and PHP-FPM, user `server-room`, port 8080) |
+| `docker/`                       | `nginx.conf`, `php-fpm.conf` and `entrypoint.sh` of the image; `demo-proxy.conf` plays SWAG and Authelia in the demo                                                                      |
+| `compose.yaml`                  | Demo: the image with the sample installation behind `demo-proxy.conf`, ports 8081 (admin) and 8082 (regular user)                                                                         |
+| `deploy/compose.yaml`           | The container for a real installation (Dockhand git stack), hardened, on SWAG's network                                                                                                   |
+| `.devcontainer/`                | `devcontainer.json` (dev-kit feature, code in a volume) and `serve.sh`, which starts `just serve`                                                                                         |
+| `justfile`                      | Development commands                                                                                                                                                                      |
+| `package.json`, `composer.json` | Development tools only: Prettier and ESLint, PHP-CS-Fixer and PHPStan, with lockfiles                                                                                                     |
+| `README.md`                     | What it does, requirements, installation, configuration                                                                                                                                   |
+| `CHANGELOG.md`                  | Release notes, one section per version                                                                                                                                                    |
+| `AGENTS.md`                     | This file                                                                                                                                                                                 |
+
+## Development
+
+Run everything through the `justfile`, not the tools directly:
+
+| Command                     | What it does                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------------- |
+| `just check`                | Prettier and PHP-CS-Fixer (formatting), ESLint, PHPStan                                           |
+| `just fmt`                  | Formats everything                                                                                |
+| `just serve`                | The working tree with the sample installation: 8081 admin Alex, 8082 regular user Sam (127.0.0.1) |
+| `just demo`                 | The image with the sample installation behind a stand-in for SWAG (needs Docker: host only)       |
+| `just perf [--check]`       | Measures the animation (see "Performance")                                                        |
+| `just capture [shots\|gif]` | Regenerates the screenshots and GIFs (see "Screenshots")                                          |
+| `just release <x.y.z> "…"`  | Changelog, `VERSION`, signed commit and tag; push on the host with `dev-kit-host push`            |
+| `just deploy`               | Deploys the release on `origin/main` through the Dockhand webhook and waits for `/healthz`        |
+
+In the devcontainer the dev server runs from the start (`.devcontainer/serve.sh`, log in `/tmp/serve.log`), and `just perf` and `just capture` run directly, without Docker.
 
 ## Conventions
 
-- No build step and no dependencies: plain PHP 8, vanilla JavaScript, one stylesheet. Keep it that way. The container image, the demo and the devcontainer only package the page; it must keep working inside SWAG as it is.
-- The page files are listed in four places: `Dockerfile` (`COPY`), `.dockerignore`, `capture.sh` and `perf.sh`. A new page file goes into all four.
+- No build step and no runtime dependencies: plain PHP 8, vanilla JavaScript, one stylesheet. Keep it that way; `package.json` and `composer.json` hold development tools only. The container image, the demo and the devcontainer only package the page; it must keep working inside SWAG as it is.
+- The page files are listed in four places: `Dockerfile` (stage `build`), `.dockerignore`, `capture.sh` and `perf.sh`. A new page file goes into all four.
 - Settings are read with `getenv() + load_env(ENV_FILE)`: environment variables win over `.env`. SWAG's PHP-FPM clears the environment, the image's keeps it (`clear_env = no`).
+- Code style: `.editorconfig`, Prettier (4 spaces, no semicolons, double quotes, trailing commas) and PHP-CS-Fixer (PER coding style); `just fmt` before every commit, `just check` must pass.
 - Identifiers and comments in English. UI texts in English.
 - Nothing in this folder is served by URL; `page.html.php` inlines CSS, JS and the favicon. New assets must be inlined the same way.
 - Access is decided on the server only. Never send the browser anything the user may not see, neither in the page nor in `/?data=1`.
 - Keep the fallbacks working: no JavaScript, `prefers-reduced-motion`, `prefers-color-scheme`, `prefers-contrast: more`.
-- Installation-specific values (domain, groups, service names, URLs) belong in `.env`, read by `load_env()` in `index.php`. Add every new key with a comment to `.env.example` and to the configuration table in the README.
+- Installation-specific values (domain, groups, service names, URLs) belong in `.env`, read by `load_env()` in `index.php`. Add every new key with a comment to `.env.example`, to the configuration table in the README and to `deploy/compose.yaml`.
 - This repository is public. Use `example.com`, `192.0.2.x` and generic names in code, docs, tests and commit messages. Never commit real domains, IP addresses, user names, tokens, `data/` or `.env`.
 
 ## With every change
 
-1. Add a section to `CHANGELOG.md` ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)) with the next version under [Semantic Versioning](https://semver.org/spec/v2.0.0.html): MAJOR for changes that need action from people running it (configuration, nginx, Authelia, snapshot format), MINOR for new features, PATCH for fixes, small visual tweaks and performance. Tag the commit `v<version>`. Changes without a release (`docs`, `refactor`, `chore`) go under `## [Unreleased]` at the top; the next release turns that section into its own.
+1. Add the change to `## [Unreleased]` in `CHANGELOG.md` ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)), written for people running the page; changes that need action from them (configuration, nginx, Authelia, snapshot format, compose) as `**Breaking:**`. A release (`just release`) turns that section into `## [x.y.z]` under [Semantic Versioning](https://semver.org/spec/v2.0.0.html): MAJOR for breaking changes, MINOR for new features, PATCH for fixes, small visual tweaks and performance.
 2. Update `README.md` when features, requirements, installation or configuration change. Keep it about using the project, not about one installation.
 3. Update this file when the layout or the conventions change.
-4. Check: `php -l index.php`, and look at the page in light and dark mode, narrow and wide, and play the sign-out with `/?dry`, in the devcontainer's dev server or the demo (`docker compose up --build`, which also builds the image).
-5. When the look changes, regenerate the screenshots (see below) and commit them with the change.
-   When anything that moves changes (animations, the layers in `liftAnimated()`, traffic), run `docs/perf/perf.sh --check` (see "Performance").
-6. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), matching the version bump: `feat` (MINOR), `fix` (PATCH, also small visual tweaks), `perf` (PATCH), `docs`, `refactor` or `chore` (no release); `!` after the type plus a `BREAKING CHANGE:` footer for MAJOR. Use a scope where it helps, e.g. `rack`, `signout`, `intro`, `noscript`, `config`. Imperative, lower-case subject up to 72 characters; the body says what changes for the user and why.
+4. Check: `just check`, and look at the page in light and dark mode, narrow and wide, and play the sign-out with `/?dry`, in the dev server (`just serve`) or the demo (`just demo`, which also builds the image).
+5. When the look changes, regenerate the screenshots (`just capture`) and commit them with the change. When anything that moves changes (animations, the layers in `liftAnimated()`, traffic), run `just perf --check` (see "Performance").
+6. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `feat` (MINOR), `fix` (PATCH, also small visual tweaks), `perf` (PATCH), `docs`, `refactor` or `chore` (no release); `!` after the type plus a `BREAKING CHANGE:` footer for MAJOR. Use a scope where it helps, e.g. `rack`, `signout`, `intro`, `noscript`, `config`. Imperative, lower-case subject up to 72 characters; the body says what changes for the user and why.
 
 ## Screenshots
 
 The images in `docs/screenshots/` show a made-up installation, never a real one. Regenerate all of them with
 
 ```sh
-docs/screenshots/capture/capture.sh          # or: capture.sh shots | capture.sh gif
+just capture          # or: just capture shots | just capture gif
 ```
 
-It needs only Docker and takes about two minutes; in the devcontainer it runs directly, without Docker. It builds the image `server-room-capture` (Node, PHP, Chromium, ffmpeg), copies the page from the working tree with `sample/env` as `.env` into a temp dir, serves it with PHP's built-in server and records it with headless Chromium. The results overwrite the files in `docs/screenshots/`.
+It needs only Docker and takes about two minutes; in the devcontainer it runs directly, without Docker. It builds the image `server-room-capture` (stage `capture` of the `Dockerfile`: Node, PHP, Chromium, ffmpeg), copies the page from the working tree with `docs/sample/env` as `.env` into a temp dir, serves it with PHP's built-in server and records it with headless Chromium. The results overwrite the files in `docs/screenshots/`.
 
-- `sample/env`, `sample/proxy-confs/` and `sample/stacks.json` are the installation: `example.com`, a server and a NAS at `192.0.2.x`. The proxy confs go without Authelia, so `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` decides what the regular user sees.
-- `sample/router.php` stands in for Authelia: port 8081 is the admin Alex (`admins`), port 8082 the regular user Sam (`family`). Chromium maps `example.com` to localhost, so the host name in the page is `example.com` too.
+- `docs/sample/env`, `docs/sample/proxy-confs/` and `docs/sample/stacks.json` are the installation: `example.com`, a server and a NAS at `192.0.2.x`. The proxy confs go without Authelia, so `GROUPS_WITHOUT_AUTHELIA_PER_SERVICE` decides what the regular user sees.
+- `docs/sample/router.php` stands in for Authelia: port 8081 is the admin Alex (`admins`), port 8082 the regular user Sam (`family`); capture and perf use 18081 and 18082, so they do not collide with the dev server. Chromium maps `example.com` to localhost, so the host name in the page is `example.com` too.
 - `capture.mjs` lists the screenshots (file, user, viewport, colour scheme, contrast, JavaScript on or off) and scripts the two GIFs: `intro.gif` records the first 10 s after loading, `signout.gif` clicks the plug on `/?dry` and records the shutdown. Static shots wait 8 s so the greeting is typed out.
 - Desktop shots are 1440×900 and full page; phone shots are 390×844 at 2× and only the first screen. GIFs are 960 px wide at 10 fps; keep `signout.gif` around 2 MB.
 - Look at every image before committing: traffic and blinking LEDs are random, so the images differ on every run. Only commit them when the look changed.
@@ -74,7 +101,7 @@ It needs only Docker and takes about two minutes; in the devcontainer it runs di
 Measure the animation with
 
 ```sh
-docs/perf/perf.sh [--check] [repo-dir]       # PERF_OUT=result.json docs/perf/perf.sh
+just perf [--check] [repo-dir]       # PERF_OUT=result.json just perf
 ```
 
 It needs only Docker and takes about two minutes; in the devcontainer it runs directly, without Docker. It reuses the image and the sample installation from the screenshot capture, copies the page from the working tree (or from `repo-dir`, e.g. a git worktree of another revision) into a temp dir and serves it with PHP's built-in server. For each scenario (desktop light and dark, tablet, phone with 4× and 6× CPU throttling, and the idle sign-out page `/?dry` on the phone) headless Chromium opens the page as the admin, waits 4 s until the traffic runs and measures 8 s: `requestAnimationFrame` intervals (median, P95, share of late and dropped frames, fps) and the main-thread time from `Performance.getMetrics` (script, style, layout, task). A Markdown table goes to stdout, JSON to `PERF_OUT`. The column "SVG anim." counts the CSS animations running on elements inside an SVG.

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Regenerates the screenshots and GIFs in docs/screenshots from the made-up installation in
-# sample/ (see AGENTS.md). Needs only Docker, or runs directly in the devcontainer.
+# docs/sample (see AGENTS.md). Needs only Docker, or runs directly in the devcontainer.
 # Pass "shots" or "gif" to redo just one kind.
 set -eu
 
@@ -9,7 +9,8 @@ repo=$(cd "$here/../../.." && pwd)
 image=server-room-capture
 
 if [ -n "${SERVER_ROOM_DEVCONTAINER:-}" ]; then
-    # The devcontainer has the tools, and /capture and /work where the capture container has them
+    # The devcontainer has the tools, and /capture, /sample and /work where the capture container
+    # has them
     work=/work
     find "$work" -mindepth 1 -delete
     trap 'find "$work" -mindepth 1 -delete' EXIT
@@ -17,19 +18,19 @@ if [ -n "${SERVER_ROOM_DEVCONTAINER:-}" ]; then
 else
     work=$(mktemp -d)
     trap 'rm -rf "$work"' EXIT
-    docker build -q --target capture -t "$image" "$here" >/dev/null
+    docker build -q --target capture -t "$image" "$repo" >/dev/null
     run() {
         docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp \
-            -v "$here:/capture:ro" -v "$work:/work" "$image" "$@"
+            -v "$here:/capture:ro" -v "$repo/docs/sample:/sample:ro" -v "$work:/work" "$image" "$@"
     }
 fi
 
 # The page as it is in the working tree, with the sample .env instead of yours
 mkdir -p "$work/site" "$work/out"
-for file in index.php page.html.php style.css intro.js rack.js favicon.svg; do
+for file in VERSION index.php page.html.php style.css intro.js rack.js favicon.svg; do
     cp "$repo/$file" "$work/site/"
 done
-cp "$here/sample/env" "$work/site/.env"
+cp "$repo/docs/sample/env" "$work/site/.env"
 
 run node /capture/capture.mjs "${1:-}"
 

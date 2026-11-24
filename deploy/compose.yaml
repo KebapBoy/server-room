@@ -1,0 +1,50 @@
+# server-room for a real installation behind SWAG and Authelia, as a Dockhand git stack with the
+# compose path deploy/compose.yaml. Set the variables below in the stack's environment (keys and
+# comments: .env.example). The stack follows main with auto-update off; "dev-kit deploy" deploys a
+# release through the stack's webhook.
+#
+# The page trusts the Remote-* headers SWAG passes on from Authelia: whoever reaches port 8080 can
+# claim to be anyone. Keep it on a network with nothing but SWAG and Authelia, never publish it.
+services:
+    server-room:
+        build: ..
+        image: server-room:local
+        restart: unless-stopped
+        environment:
+            TZ: ${TZ:-UTC}
+            BASE_DOMAIN: ${BASE_DOMAIN:?set BASE_DOMAIN}
+            AUTHELIA_URL: ${AUTHELIA_URL:-http://authelia:9091}
+            LOGOUT_URL: ${LOGOUT_URL:-https://auth.${BASE_DOMAIN}/logout}
+            SKIPPED_SERVICES: ${SKIPPED_SERVICES:-auth}
+            ADMIN_GROUP: ${ADMIN_GROUP:-admins}
+            GROUPS_WITHOUT_AUTHELIA: ${GROUPS_WITHOUT_AUTHELIA:-admins}
+            GROUPS_WITHOUT_AUTHELIA_PER_SERVICE: ${GROUPS_WITHOUT_AUTHELIA_PER_SERVICE:-}
+            SERVICE_CONTAINERS: ${SERVICE_CONTAINERS:-}
+            SERVICE_PATHS: ${SERVICE_PATHS:-}
+            SNAPSHOT_MAX_AGE: ${SNAPSHOT_MAX_AGE:-180}
+        volumes:
+            # The folder your snapshot job writes stacks.json to
+            - ${SERVER_ROOM_SNAPSHOT_DIR:?set SERVER_ROOM_SNAPSHOT_DIR}:/data:ro
+            # SWAG's proxy confs (the folder with the *.subdomain.conf files)
+            - ${SERVER_ROOM_PROXY_CONFS:?set SERVER_ROOM_PROXY_CONFS}:/config/nginx/proxy-confs:ro
+        # Hardening: read-only image (scratch in /tmp), no capabilities, no gaining privileges,
+        # bounded memory and processes
+        read_only: true
+        tmpfs:
+            - /tmp:size=16m
+        mem_limit: 128m
+        pids_limit: 100
+        cap_drop:
+            - ALL
+        security_opt:
+            - no-new-privileges:true
+        networks:
+            - proxy
+        # No published port: only SWAG talks to it (port 8080)
+
+networks:
+    # The network SWAG and Authelia are in, with nothing else in it: every container in it can
+    # claim to be any user. No default, because SWAG's usual shared network would be wrong here.
+    proxy:
+        name: ${SERVER_ROOM_PROXY_NETWORK:?set SERVER_ROOM_PROXY_NETWORK}
+        external: true

@@ -1,6 +1,7 @@
 // Renders the screenshots and the GIF frames of the page with the sample installation, driving
 // Chromium over the DevTools protocol. Run by capture.sh inside its container:
-// /capture is this folder (read-only), /work a temp dir with the page in site/, out/ and frames/.
+// /capture is this folder and /sample the sample installation (both read-only), /work a temp
+// dir with the page in site/, out/ and frames/.
 import { spawn } from "node:child_process"
 import fs from "node:fs"
 
@@ -10,7 +11,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 // ---- sample snapshot -------------------------------------------------------
 // sample/stacks.json, made current so the page does not report stale data
 function writeSnapshot() {
-    const snap = JSON.parse(fs.readFileSync("/capture/sample/stacks.json", "utf8"))
+    const snap = JSON.parse(fs.readFileSync("/sample/stacks.json", "utf8"))
     snap.generated = Math.floor(Date.now() / 1000)
     fs.mkdirSync("/work/site/data", { recursive: true })
     fs.writeFileSync("/work/site/data/stacks.json", JSON.stringify(snap))
@@ -141,14 +142,15 @@ async function click(page, selector) {
 }
 
 // ---- main -----------------------------------------------------------------
-const ADMIN = "http://example.com:8081/"
-const USER = "http://example.com:8082/"
+const ADMIN = "http://example.com:18081/"
+const USER = "http://example.com:18082/"
 const DESKTOP = { width: 1440, height: 900 }
 const MOBILE = { width: 390, height: 844, scale: 2, mobile: true }
 
 writeSnapshot()
-const servers = [8081, 8082].map((port) =>
-    spawn("php", ["-S", `0.0.0.0:${port}`, "/capture/sample/router.php"], { stdio: "ignore" }),
+// Not 8081 and 8082: in the devcontainer the dev server has those
+const servers = [18081, 18082].map((port) =>
+    spawn("php", ["-S", `127.0.0.1:${port}`, "/sample/router.php"], { stdio: "ignore" }),
 )
 const chrome = spawn(
     "chromium-browser",

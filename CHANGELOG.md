@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Devcontainer: Claude Code is installed (native installer, plus the VS Code extension) and keeps its settings and sign-in in a volume, so it stays signed in across rebuilds; your user-level `~/.claude/CLAUDE.md` from the host is mounted in read-only.
+- `/healthz` reports the version: `{"status":"ok","version":"…"}`.
+- `deploy/compose.yaml` runs the container for a real installation, hardened (read-only, no capabilities), with the settings from the environment and the snapshot and proxy confs as read-only mounts. See "Running as a container" in the README.
+- Development commands as a `justfile` (`just check`, `fmt`, `serve`, `demo`, `perf`, `capture`), with Prettier, ESLint, PHP-CS-Fixer and PHPStan as development tools.
+
+### Changed
+
+- **Breaking:** the container reads the stack snapshot from `/data/stacks.json` instead of `/app/data/stacks.json`: mount the snapshot folder at `/data`.
+- The container runs as user `server-room` (UID 1000) instead of `nobody`.
+- The devcontainer uses the dev-kit feature (Claude Code, git, just) and keeps the code in a Docker volume; it is built from the stage `dev` of the `Dockerfile`, which also holds the capture image. The sample installation moved to `docs/sample/`.
 
 ## [1.1.0] - 2026-11-08
 
