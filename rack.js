@@ -600,7 +600,7 @@
         })
     }
 
-    function drawRack(svg, rack, plan, x0, y0, w, cols, devices) {
+    function drawRack(svg, rack, plan, x0, y0, w, cols) {
         const g = el(svg, "g", { class: "rack-unit" })
         const units = sum(plan)
         drawFrame(g, x0, y0, w, units)
@@ -1113,7 +1113,7 @@
         const contexts = racks.map((rack, i) => {
             const x0 = 1 + (narrow ? 0 : i * (slotW + gap))
             const y0 = top + (narrow ? i * (rackH + gap) : 0)
-            return drawRack(svg, rack, plans[i], x0, y0, w, cols, model.devices)
+            return drawRack(svg, rack, plans[i], x0, y0, w, cols)
         })
         const cables = el(svg, "g", { class: "cables" })
         const routes = []

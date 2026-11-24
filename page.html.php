@@ -1,10 +1,16 @@
+<?php
+// HTML of the page, required by index.php, which sets these:
+/** @var string $firstName */
+/** @var array<string, mixed> $model */
+/** @var string $modelJson */
+?>
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Server Room · <?= h(BASE_DOMAIN) ?></title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,<?= base64_encode(file_get_contents(__DIR__ . '/favicon.svg')) ?>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,<?= base64_encode((string) file_get_contents(__DIR__ . '/favicon.svg')) ?>">
 <style>
 <?= file_get_contents(__DIR__ . '/style.css') ?></style>
 </head>

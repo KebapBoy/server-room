@@ -33,7 +33,7 @@ define('ADMIN_GROUP', $env['ADMIN_GROUP'] ?? 'admins');
 // these groups see them. Can be overridden per service (file name without .subdomain.conf).
 define('GROUPS_WITHOUT_AUTHELIA', env_list($env, 'GROUPS_WITHOUT_AUTHELIA', 'admins'));
 define('GROUPS_WITHOUT_AUTHELIA_PER_SERVICE', array_map(
-    fn($groups) => array_values(array_filter(array_map('trim', explode('|', $groups)), 'strlen')),
+    fn($groups) => array_values(array_filter(array_map('trim', explode('|', $groups)), fn(string $group): bool => $group !== '')),
     env_map($env, 'GROUPS_WITHOUT_AUTHELIA_PER_SERVICE'),
 ));
 
@@ -48,7 +48,7 @@ define('SERVICE_PATHS', env_map($env, 'SERVICE_PATHS'));
 function load_env(string $file): array
 {
     $env = [];
-    foreach (is_readable($file) ? file($file, FILE_IGNORE_NEW_LINES) : [] as $line) {
+    foreach ((is_readable($file) ? file($file, FILE_IGNORE_NEW_LINES) : false) ?: [] as $line) {
         if (preg_match('/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$/', $line, $match)) {
             $env[$match[1]] = preg_replace('/^(["\'])(.*)\1$/', '$2', $match[2]);
         }
@@ -59,7 +59,7 @@ function load_env(string $file): array
 // Comma-separated list: "a, b" => ['a', 'b']
 function env_list(array $env, string $key, string $default = ''): array
 {
-    return array_values(array_filter(array_map('trim', explode(',', $env[$key] ?? $default)), 'strlen'));
+    return array_values(array_filter(array_map('trim', explode(',', $env[$key] ?? $default)), fn(string $item): bool => $item !== ''));
 }
 
 // Comma-separated name=value pairs: "a=x, b=y" => ['a' => 'x', 'b' => 'y']
@@ -78,10 +78,10 @@ function env_map(array $env, string $key): array
 function read_services(): array
 {
     $services = [];
-    foreach (glob(PROXY_CONFS) as $file) {
+    foreach (glob(PROXY_CONFS) ?: [] as $file) {
         $name = basename($file, '.subdomain.conf');
         $active = implode("\n", array_filter(
-            file($file, FILE_IGNORE_NEW_LINES),
+            file($file, FILE_IGNORE_NEW_LINES) ?: [],
             fn($line) => !preg_match('/^\s*#/', $line),
         ));
         if (!preg_match_all('/^\s*server_name\s+([a-z0-9-]+)\.\*\s*;/mi', $active, $matches)) {
